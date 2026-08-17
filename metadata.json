@@ -1,0 +1,6 @@
+{
+  "name": "Dukandar - E-Commerce & Admin Hub",
+  "description": "Full-featured modern e-commerce marketplace and comprehensive admin dashboard with sales graphs, inventory control, order tracking, Urdu/English bilingual support, and WhatsApp ordering.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
