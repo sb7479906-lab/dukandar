@@ -4,7 +4,6 @@ import {
   Star,
   Heart,
   ShoppingCart,
-  Check,
   Truck,
   ShieldCheck,
   RotateCcw,
@@ -14,7 +13,6 @@ import {
   Send,
   User,
   Sparkles,
-  Share2,
 } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 import { formatPrice, generateWhatsAppProductInquiryUrl } from '../utils/formatters';
@@ -54,6 +52,14 @@ export const ProductDetailModal: React.FC = () => {
   const [reviewerComment, setReviewerComment] = useState('');
   const [reviewSubmitted, setReviewSubmitted] = useState(false);
 
+  const productImages = product.images && product.images.length > 0 
+    ? product.images 
+    : ['https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800&auto=format&fit=crop&q=80'];
+
+  const productTitle = language === 'ur' ? (product.titleUrdu || product.title) : product.title;
+  const productCategory = language === 'ur' ? (product.categoryUrdu || product.category) : product.category;
+  const productDesc = language === 'ur' ? (product.descriptionUrdu || product.description) : product.description;
+
   const handleAddToCart = () => {
     addToCart(product, quantity, selectedColor, selectedSize);
     setActiveProductModal(null);
@@ -67,7 +73,8 @@ export const ProductDetailModal: React.FC = () => {
   };
 
   const handleWhatsAppOrder = () => {
-    const url = generateWhatsAppProductInquiryUrl(settings.whatsappNumber, product);
+    const whatsappNum = settings?.whatsappNumber || '923001234567';
+    const url = generateWhatsAppProductInquiryUrl(whatsappNum, product);
     window.open(url, '_blank');
   };
 
@@ -108,8 +115,8 @@ export const ProductDetailModal: React.FC = () => {
               {/* Main Image */}
               <div className="aspect-square w-full rounded-2xl overflow-hidden bg-white border border-slate-200/80 mb-4 relative shadow-inner">
                 <img
-                  src={product.images[activeImageIdx] || product.images[0]}
-                  alt={product.title}
+                  src={productImages[activeImageIdx] || productImages[0]}
+                  alt={productTitle}
                   className="w-full h-full object-cover object-center"
                 />
 
@@ -121,9 +128,9 @@ export const ProductDetailModal: React.FC = () => {
               </div>
 
               {/* Thumbnails */}
-              {product.images.length > 1 && (
+              {productImages.length > 1 && (
                 <div className="flex items-center gap-3 overflow-x-auto pb-2">
-                  {product.images.map((img, idx) => (
+                  {productImages.map((img, idx) => (
                     <button
                       key={idx}
                       onClick={() => setActiveImageIdx(idx)}
@@ -163,7 +170,7 @@ export const ProductDetailModal: React.FC = () => {
               {/* Category & Rating */}
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold uppercase tracking-wider text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-md">
-                  {language === 'ur' ? product.categoryUrdu : product.category}
+                  {productCategory}
                 </span>
 
                 <div className="flex items-center gap-2">
@@ -188,30 +195,30 @@ export const ProductDetailModal: React.FC = () => {
 
               {/* Title */}
               <h2 className="text-xl sm:text-2xl font-black text-slate-900 leading-snug">
-                {language === 'ur' ? product.titleUrdu : product.title}
+                {productTitle}
               </h2>
 
               {/* Price & Savings */}
               <div className="flex items-baseline gap-3 p-3.5 bg-slate-50 rounded-2xl border border-slate-200/80">
                 <span className="text-2xl sm:text-3xl font-black text-slate-900">
-                  {formatPrice(product.price, currency, settings.usdRate)}
+                  {formatPrice(product.price, currency, settings?.usdRate)}
                 </span>
                 {product.originalPrice > product.price && (
                   <span className="text-sm text-slate-400 line-through">
-                    {formatPrice(product.originalPrice, currency, settings.usdRate)}
+                    {formatPrice(product.originalPrice, currency, settings?.usdRate)}
                   </span>
                 )}
                 {product.discountPercent > 0 && (
                   <span className="text-xs font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-full">
                     {t('save')}{' '}
-                    {formatPrice(product.originalPrice - product.price, currency, settings.usdRate)}
+                    {formatPrice(product.originalPrice - product.price, currency, settings?.usdRate)}
                   </span>
                 )}
               </div>
 
               {/* Description */}
               <p className="text-sm text-slate-600 leading-relaxed">
-                {language === 'ur' ? product.descriptionUrdu : product.description}
+                {productDesc}
               </p>
 
               {/* Color Selector */}
@@ -342,7 +349,7 @@ export const ProductDetailModal: React.FC = () => {
                     {product.specs.map((spec, i) => (
                       <div key={i} className="py-1.5 flex justify-between">
                         <span className="text-slate-500 font-medium">
-                          {language === 'ur' ? spec.labelUrdu : spec.label}
+                          {language === 'ur' ? (spec.labelUrdu || spec.label) : spec.label}
                         </span>
                         <span className="text-slate-900 font-bold">{spec.value}</span>
                       </div>
