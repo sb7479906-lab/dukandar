@@ -1,14 +1,15 @@
 import React from 'react';
-import { X, Heart, ShoppingBag, Trash2, ArrowRight } from 'lucide-react';
+import { X, Heart, ShoppingBag, Trash2 } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
+import { Product } from '../types';
 import { formatPrice } from '../utils/formatters';
 
 export const WishlistModal: React.FC = () => {
   const {
     isWishlistOpen,
     setIsWishlistOpen,
-    wishlist,
-    products,
+    wishlist = [],
+    products = [],
     toggleWishlist,
     addToCart,
     currency,
@@ -23,7 +24,7 @@ export const WishlistModal: React.FC = () => {
 
   const favoriteProducts = products.filter((p) => wishlist.includes(p.id));
 
-  const handleMoveToCart = (prod: any) => {
+  const handleMoveToCart = (prod: Product) => {
     addToCart(prod, 1);
     toggleWishlist(prod.id);
   };
@@ -83,55 +84,60 @@ export const WishlistModal: React.FC = () => {
           ) : (
             <div className="space-y-4">
               <div className="divide-y divide-slate-100">
-                {favoriteProducts.map((prod) => (
-                  <div key={prod.id} className="py-3.5 flex items-center gap-3">
-                    <img
-                      src={prod.images[0]}
-                      alt={prod.title}
-                      onClick={() => {
-                        setIsWishlistOpen(false);
-                        setActiveProductModal(prod);
-                      }}
-                      className="w-16 h-16 object-cover rounded-xl border border-slate-200 cursor-pointer shrink-0"
-                    />
+                {favoriteProducts.map((prod) => {
+                  const prodImg = prod.images?.[0] || 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800&auto=format&fit=crop&q=80';
+                  const prodTitle = language === 'ur' ? (prod.titleUrdu || prod.title) : prod.title;
 
-                    <div className="flex-1 min-w-0">
-                      <h4
+                  return (
+                    <div key={prod.id} className="py-3.5 flex items-center gap-3">
+                      <img
+                        src={prodImg}
+                        alt={prodTitle}
                         onClick={() => {
                           setIsWishlistOpen(false);
                           setActiveProductModal(prod);
                         }}
-                        className="text-xs sm:text-sm font-bold text-slate-900 truncate hover:text-emerald-600 cursor-pointer"
-                      >
-                        {language === 'ur' ? prod.titleUrdu : prod.title}
-                      </h4>
-                      <div className="text-xs font-black text-slate-900 mt-1">
-                        {formatPrice(prod.price, currency, settings.usdRate)}
+                        className="w-16 h-16 object-cover rounded-xl border border-slate-200 cursor-pointer shrink-0"
+                      />
+
+                      <div className="flex-1 min-w-0">
+                        <h4
+                          onClick={() => {
+                            setIsWishlistOpen(false);
+                            setActiveProductModal(prod);
+                          }}
+                          className="text-xs sm:text-sm font-bold text-slate-900 truncate hover:text-emerald-600 cursor-pointer"
+                        >
+                          {prodTitle}
+                        </h4>
+                        <div className="text-xs font-black text-slate-900 mt-1">
+                          {formatPrice(prod.price, currency, settings?.usdRate)}
+                        </div>
+                        <span className="text-[10px] text-emerald-600 font-semibold">
+                          {prod.stock > 0 ? t('inStock') : t('outOfStock')}
+                        </span>
                       </div>
-                      <span className="text-[10px] text-emerald-600 font-semibold">
-                        {prod.stock > 0 ? t('inStock') : t('outOfStock')}
-                      </span>
-                    </div>
 
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => handleMoveToCart(prod)}
-                        disabled={prod.stock <= 0}
-                        className="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 text-white p-2 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-xs"
-                      >
-                        <ShoppingBag className="w-3.5 h-3.5" />
-                        <span className="hidden sm:inline">{t('quickAdd')}</span>
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => handleMoveToCart(prod)}
+                          disabled={prod.stock <= 0}
+                          className="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 text-white p-2 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-xs"
+                        >
+                          <ShoppingBag className="w-3.5 h-3.5" />
+                          <span className="hidden sm:inline">{t('quickAdd')}</span>
+                        </button>
 
-                      <button
-                        onClick={() => toggleWishlist(prod.id)}
-                        className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                        <button
+                          onClick={() => toggleWishlist(prod.id)}
+                          className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
               <div className="pt-4 border-t border-slate-200 flex justify-end">
