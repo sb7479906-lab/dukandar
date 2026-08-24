@@ -8,12 +8,9 @@ import {
   Sparkles,
   LayoutDashboard,
   Store,
-  Compass,
   MessageCircle,
   Truck,
   Globe,
-  DollarSign,
-  ChevronDown,
   X,
 } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
@@ -29,14 +26,12 @@ export const Navbar: React.FC = () => {
     setActiveView,
     t,
     cartCount,
-    wishlist,
+    wishlist = [],
     unreadNotificationCount,
     searchQuery,
     setSearchQuery,
-    categories,
-    selectedCategory,
     setSelectedCategory,
-    products,
+    products = [],
     setIsCartOpen,
     setIsWishlistOpen,
     setIsTrackingOpen,
@@ -47,10 +42,10 @@ export const Navbar: React.FC = () => {
     setActiveProductModal,
     currentUser,
     settings,
+    cartSubtotal,
   } = useStore();
 
   const [searchFocused, setSearchFocused] = useState(false);
-  const [langDropdownOpen, setLangDropdownOpen] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
 
   // Filtered preview for live search dropdown
@@ -58,9 +53,9 @@ export const Navbar: React.FC = () => {
     ? products
         .filter(
           (p) =>
-            p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            p.titleUrdu.includes(searchQuery) ||
-            p.tags.some((tag) => tag.toLowerCase().includes(searchQuery.toLowerCase()))
+            (p.title && p.title.toLowerCase().includes(searchQuery.toLowerCase())) ||
+            (p.titleUrdu && p.titleUrdu.includes(searchQuery)) ||
+            (p.tags && p.tags.some((tag) => tag.toLowerCase().includes(searchQuery.toLowerCase())))
         )
         .slice(0, 5)
     : [];
@@ -75,29 +70,33 @@ export const Navbar: React.FC = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  const storeNameEn = settings?.storeName || 'Dukandar';
+  const storeNameUr = settings?.storeNameUrdu || 'دکان دار';
+  const announcementEn = settings?.announcementEn || 'Free Express Shipping Across Pakistan on Orders Above Rs. 3,000!';
+  const announcementUr = settings?.announcementUr || 'تمام آرڈرز پر 3,000 روپے سے زائد پر مفت ڈلیوری دستیاب ہے!';
+  const userAvatar = currentUser?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80';
+
   return (
     <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-xs">
       {/* Top Announcement Bar */}
-      {settings.showAnnouncement && (
-        <div className="bg-gradient-to-r from-emerald-700 via-teal-700 to-emerald-800 text-white text-xs font-medium py-1.5 px-4 text-center flex items-center justify-between">
-          <div className="hidden sm:block flex-1"></div>
-          <div className="flex items-center justify-center gap-2 flex-1 text-center font-medium">
-            <Sparkles className="w-3.5 h-3.5 text-amber-300 animate-pulse" />
-            <span>
-              {language === 'ur' ? settings.announcementTextUrdu : settings.announcementText}
-            </span>
-          </div>
-          <div className="flex items-center justify-end gap-3 flex-1 text-xs">
-            <button
-              onClick={() => setIsTrackingOpen(true)}
-              className="hover:underline flex items-center gap-1 cursor-pointer text-emerald-100 hover:text-white"
-            >
-              <Truck className="w-3.5 h-3.5" />
-              <span>{t('trackOrder')}</span>
-            </button>
-          </div>
+      <div className="bg-gradient-to-r from-emerald-700 via-teal-700 to-emerald-800 text-white text-xs font-medium py-1.5 px-4 text-center flex items-center justify-between">
+        <div className="hidden sm:block flex-1"></div>
+        <div className="flex items-center justify-center gap-2 flex-1 text-center font-medium">
+          <Sparkles className="w-3.5 h-3.5 text-amber-300 animate-pulse" />
+          <span>
+            {language === 'ur' ? announcementUr : announcementEn}
+          </span>
         </div>
-      )}
+        <div className="flex items-center justify-end gap-3 flex-1 text-xs">
+          <button
+            onClick={() => setIsTrackingOpen(true)}
+            className="hover:underline flex items-center gap-1 cursor-pointer text-emerald-100 hover:text-white"
+          >
+            <Truck className="w-3.5 h-3.5" />
+            <span>{t('trackOrder')}</span>
+          </button>
+        </div>
+      </div>
 
       {/* Main Header Container */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -118,7 +117,7 @@ export const Navbar: React.FC = () => {
               <div>
                 <div className="flex items-center gap-1.5">
                   <span className="font-extrabold text-xl sm:text-2xl text-slate-900 tracking-tight">
-                    {language === 'ur' ? 'دکان دار' : 'Dukandar'}
+                    {language === 'ur' ? storeNameUr : storeNameEn}
                   </span>
                   <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wider">
                     {language === 'ur' ? 'سٹور' : 'Store'}
@@ -172,16 +171,16 @@ export const Navbar: React.FC = () => {
                           className="flex items-center gap-3 p-2.5 hover:bg-slate-50 cursor-pointer transition-colors"
                         >
                           <img
-                            src={product.images[0]}
+                            src={product.images?.[0] || 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800&auto=format&fit=crop&q=80'}
                             alt={product.title}
                             className="w-11 h-11 object-cover rounded-lg border border-slate-100"
                           />
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-semibold text-slate-900 truncate">
-                              {language === 'ur' ? product.titleUrdu : product.title}
+                              {language === 'ur' ? (product.titleUrdu || product.title) : product.title}
                             </p>
                             <p className="text-xs text-emerald-600 font-bold">
-                              {formatPrice(product.price, currency, settings.usdRate)}
+                              {formatPrice(product.price, currency, settings?.usdRate)}
                             </p>
                           </div>
                         </div>
@@ -273,7 +272,7 @@ export const Navbar: React.FC = () => {
                 )}
               </div>
               <span className="hidden md:inline font-bold">
-                {cartCount > 0 ? formatPrice(useStore().cartSubtotal, currency, settings.usdRate) : t('cart')}
+                {cartCount > 0 ? formatPrice(cartSubtotal, currency, settings?.usdRate) : t('cart')}
               </span>
             </button>
 
@@ -285,7 +284,7 @@ export const Navbar: React.FC = () => {
                 title={currentUser.name}
               >
                 <img
-                  src={currentUser.avatar}
+                  src={userAvatar}
                   alt={currentUser.name}
                   className="w-8 h-8 rounded-lg object-cover ring-2 ring-emerald-500"
                 />
