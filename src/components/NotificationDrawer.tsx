@@ -1,16 +1,15 @@
 import React from 'react';
-import { X, Bell, CheckCheck, Sparkles, Package, ShieldCheck, Tag } from 'lucide-react';
+import { X, Bell, CheckCheck, Sparkles, Package, Tag } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 
 export const NotificationDrawer: React.FC = () => {
   const {
     isNotificationsOpen,
     setIsNotificationsOpen,
-    notifications,
+    notifications = [],
     markNotificationAsRead,
     markAllNotificationsAsRead,
     language,
-    t,
   } = useStore();
 
   if (!isNotificationsOpen) return null;
@@ -83,12 +82,12 @@ export const NotificationDrawer: React.FC = () => {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between">
                     <h4 className="text-xs font-bold text-slate-900 truncate">
-                      {language === 'ur' ? n.titleUrdu : n.title}
+                      {language === 'ur' ? (n.titleUrdu || n.title) : n.title}
                     </h4>
                     <span className="text-[10px] text-slate-400 shrink-0">{n.timestamp}</span>
                   </div>
                   <p className="text-[11px] text-slate-600 mt-0.5 leading-relaxed">
-                    {language === 'ur' ? n.messageUrdu : n.message}
+                    {language === 'ur' ? (n.messageUrdu || n.message) : n.message}
                   </p>
                 </div>
               </div>
