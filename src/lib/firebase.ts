@@ -9,27 +9,23 @@ import {
 } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 
-// Updated Firebase Config (rehan-haidar)
+// Cloudflare Environment Variables Se Read Ho Raha Hai
 const firebaseConfig = {
-  apiKey: "AIzaSyCv6Xr40_dhA4GjLiISjutt9BJLxeHD1ks",
-  authDomain: "rehan-haidar.firebaseapp.com",
-  projectId: "rehan-haidar",
-  storageBucket: "rehan-haidar.firebasestorage.app",
-  messagingSenderId: "450436831043",
-  appId: "1:450436831043:web:e2b3b9b368011523d401f6",
-  measurementId: "G-0VNFLZS2P9"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
 
-// Initialize Firebase App
 const app = initializeApp(firebaseConfig);
 export const analytics = typeof window !== "undefined" ? getAnalytics(app) : null;
 
-// Export Auth & Database Services
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const googleProvider = new GoogleAuthProvider();
 
-// Google Sign-In Helper Function
 export const loginWithGoogle = async () => {
   try {
     const result = await signInWithPopup(auth, googleProvider);
@@ -40,6 +36,5 @@ export const loginWithGoogle = async () => {
   }
 };
 
-// Logout Function
 export const logoutUser = () => signOut(auth);
 export { onAuthStateChanged };
