@@ -1,17 +1,13 @@
 import React, { useState } from 'react';
 import {
-  Store,
   Phone,
   Mail,
-  MapPin,
   MessageCircle,
   ShieldCheck,
   Truck,
   RotateCcw,
   Headphones,
-  Heart,
   Send,
-  Sparkles,
 } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 
@@ -19,6 +15,12 @@ export const Footer: React.FC = () => {
   const { language, t, settings, setSelectedCategory, setIsSupportOpen, setIsTrackingOpen, setActiveView } = useStore();
   const [newsletterEmail, setNewsletterEmail] = useState('');
   const [subscribed, setSubscribed] = useState(false);
+
+  const storeNameEn = settings?.storeName || 'Dukandar Store';
+  const storeNameUr = settings?.storeNameUrdu || 'دکان دار سٹور';
+  const phoneNum = settings?.phone || '0300-1234567';
+  const whatsappNum = settings?.whatsappNumber || '923001234567';
+  const emailAddr = settings?.email || 'support@dukandar.pk';
 
   const handleNewsletter = (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,7 +42,7 @@ export const Footer: React.FC = () => {
               </div>
               <div>
                 <h4 className="text-xs sm:text-sm font-black text-white">{t('freeDeliveryTag')}</h4>
-                <p className="text-[11px] text-slate-400">On all orders over Rs. 4,000</p>
+                <p className="text-[11px] text-slate-400">On all orders over Rs. 3,000</p>
               </div>
             </div>
 
@@ -88,7 +90,7 @@ export const Footer: React.FC = () => {
               </div>
               <div>
                 <span className="font-extrabold text-xl tracking-tight text-white">
-                  {language === 'ur' ? settings.storeNameUrdu : settings.storeName}
+                  {language === 'ur' ? storeNameUr : storeNameEn}
                 </span>
                 <span className="text-emerald-400 text-xs font-semibold block -mt-1">
                   Pakistan's Premium E-Store
@@ -102,19 +104,19 @@ export const Footer: React.FC = () => {
                 : 'Dukandar is Pakistan’s leading modern online marketplace offering fast courier delivery, 100% genuine verified products, Cash on Delivery, and 24/7 customer satisfaction.'}
             </p>
 
-            {/* Direct Contact details */}
+            {/* Direct Contact Details */}
             <div className="space-y-2 text-xs text-slate-400 pt-2">
               <p className="flex items-center gap-2">
                 <Phone className="w-4 h-4 text-emerald-400" />
-                <span>{settings.phone}</span>
+                <span>{phoneNum}</span>
               </p>
               <p className="flex items-center gap-2">
                 <MessageCircle className="w-4 h-4 text-emerald-400" />
-                <span>WhatsApp: +{settings.whatsappNumber}</span>
+                <span>WhatsApp: +{whatsappNum}</span>
               </p>
               <p className="flex items-center gap-2">
                 <Mail className="w-4 h-4 text-emerald-400" />
-                <span>{settings.email}</span>
+                <span>{emailAddr}</span>
               </p>
             </div>
           </div>
