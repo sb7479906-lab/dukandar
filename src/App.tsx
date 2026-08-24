@@ -27,7 +27,6 @@ import { AdminCoupons } from './components/admin/AdminCoupons';
 import { AdminSettings } from './components/admin/AdminSettings';
 
 import {
-  SlidersHorizontal,
   ArrowUpDown,
   Sparkles,
   ShoppingBag,
@@ -35,7 +34,6 @@ import {
   MessageCircle,
   X,
   Search,
-  Check,
 } from 'lucide-react';
 
 const MainAppContent: React.FC = () => {
@@ -50,8 +48,6 @@ const MainAppContent: React.FC = () => {
     setSearchQuery,
     sortBy,
     setSortBy,
-    inStockOnly,
-    setInStockOnly,
     language,
     t,
     setIsSupportOpen,
@@ -61,26 +57,22 @@ const MainAppContent: React.FC = () => {
     settings,
   } = useStore();
 
-  const [priceRange, setPriceRange] = useState<number>(50000);
+  const [inStockOnly, setInStockOnly] = useState<boolean>(false);
+  const [priceRange] = useState<number>(500000);
 
   // Filter products based on search, category, stock, and price
   const filteredProducts = products.filter((product) => {
-    // Search query matching
     const matchesSearch =
       !searchQuery ||
       product.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      product.titleUrdu.includes(searchQuery) ||
+      product.titleUrdu?.includes(searchQuery) ||
       product.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      product.tags.some((tag) => tag.toLowerCase().includes(searchQuery.toLowerCase()));
+      product.tags?.some((tag) => tag.toLowerCase().includes(searchQuery.toLowerCase()));
 
-    // Category matching
     const matchesCategory =
       selectedCategory === 'all' || product.category === selectedCategory;
 
-    // In-stock filter
     const matchesStock = !inStockOnly || product.stock > 0;
-
-    // Price range
     const matchesPrice = product.price <= priceRange;
 
     return matchesSearch && matchesCategory && matchesStock && matchesPrice;
@@ -94,9 +86,9 @@ const MainAppContent: React.FC = () => {
       case 'price_desc':
         return b.price - a.price;
       case 'rating':
-        return b.rating - a.rating;
+        return (b.rating || 0) - (a.rating || 0);
       case 'discount':
-        return b.discountPercent - a.discountPercent;
+        return (b.discountPercent || 0) - (a.discountPercent || 0);
       case 'featured':
       default:
         return (b.featured ? 1 : 0) - (a.featured ? 1 : 0);
@@ -112,7 +104,7 @@ const MainAppContent: React.FC = () => {
         <AdminHeader />
         <div className="flex-1 flex flex-col md:flex-row">
           <AdminSidebar />
-          <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto bg-slate-100 min-h-[calc(100vh-65px)]">
+          <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto bg-slate-100 text-slate-900 min-h-[calc(100vh-65px)]">
             {adminTab === 'dashboard' && <AdminDashboard />}
             {adminTab === 'analytics' && <AdminAnalytics />}
             {adminTab === 'products' && <AdminProducts />}
@@ -132,7 +124,7 @@ const MainAppContent: React.FC = () => {
       {/* Top Announcement Bar */}
       <div className="bg-gradient-to-r from-emerald-800 via-emerald-700 to-teal-800 text-white text-[11px] sm:text-xs py-2 px-4 text-center font-bold tracking-wide flex items-center justify-center gap-2">
         <Sparkles className="w-3.5 h-3.5 text-amber-300 animate-pulse" />
-        <span>{language === 'ur' ? settings.announcementUr : settings.announcementEn}</span>
+        <span>{language === 'ur' ? settings?.announcementUr : settings?.announcementEn}</span>
       </div>
 
       {/* Main Store Navbar */}
@@ -170,7 +162,6 @@ const MainAppContent: React.FC = () => {
 
           {/* Controls: Sorting & In-Stock Filter */}
           <div className="flex flex-wrap items-center gap-2.5">
-            {/* In-Stock Toggle */}
             <label className="flex items-center gap-2 bg-white px-3 py-2 rounded-2xl border border-slate-200 text-xs font-bold text-slate-700 cursor-pointer select-none hover:border-slate-300">
               <input
                 type="checkbox"
@@ -181,12 +172,11 @@ const MainAppContent: React.FC = () => {
               <span>{language === 'ur' ? 'صرف دستیاب سٹاک' : 'In-Stock Only'}</span>
             </label>
 
-            {/* Sorting Dropdown */}
             <div className="flex items-center bg-white px-3 py-1.5 rounded-2xl border border-slate-200 text-xs gap-1.5">
               <ArrowUpDown className="w-3.5 h-3.5 text-slate-400" />
               <select
                 value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as any)}
+                onChange={(e) => setSortBy(e.target.value)}
                 className="bg-transparent font-bold text-slate-800 outline-none cursor-pointer py-1"
               >
                 <option value="featured">{t('sortFeatured')}</option>
@@ -306,7 +296,7 @@ const MainAppContent: React.FC = () => {
             <p className="text-xs text-slate-300 max-w-xl leading-relaxed">
               {language === 'ur'
                 ? 'ہمارے نمائندے واٹس ایپ پر لائیو موجود ہیں۔ آپ براہ راست میسج کر کے آرڈر بک کروا سکتے ہیں۔'
-                : 'Chat directly with our verified Pakistan customer service agents on WhatsApp for instant order confirmation and recommendations.'}
+                : 'Chat directly with our verified customer service agents on WhatsApp for instant order confirmation and recommendations.'}
             </p>
           </div>
 
@@ -332,10 +322,9 @@ const MainAppContent: React.FC = () => {
 
       {/* Floating Quick Action Buttons */}
       <div className="fixed bottom-5 right-5 z-40 flex flex-col items-end gap-3">
-        {/* Floating WhatsApp Action Button */}
         <button
           onClick={() => {
-            const url = `https://wa.me/${settings.whatsappNumber}?text=${encodeURIComponent(
+            const url = `https://wa.me/${settings?.whatsappNumber || '923000000000'}?text=${encodeURIComponent(
               'Salam! I want to inquire about products on Dukandar store.'
             )}`;
             window.open(url, '_blank');
@@ -346,11 +335,10 @@ const MainAppContent: React.FC = () => {
           <MessageCircle className="w-7 h-7" />
         </button>
 
-        {/* Floating Cart Badge (if cart has items) */}
         {cart.length > 0 && (
           <button
             onClick={() => setIsCartOpen(true)}
-            className="bg-slate-900 hover:bg-slate-800 text-white px-4 py-2.5 rounded-full shadow-2xl flex items-center gap-2 text-xs font-black cursor-pointer border border-slate-700 animate-in slide-in-from-bottom"
+            className="bg-slate-900 hover:bg-slate-800 text-white px-4 py-2.5 rounded-full shadow-2xl flex items-center gap-2 text-xs font-black cursor-pointer border border-slate-700"
           >
             <ShoppingBag className="w-4 h-4 text-emerald-400" />
             <span>
