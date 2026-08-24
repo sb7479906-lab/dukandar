@@ -3,7 +3,6 @@ import {
   ResponsiveContainer,
   AreaChart,
   Area,
-  LineChart,
   Line,
   BarChart,
   Bar,
@@ -21,19 +20,9 @@ import {
   BarChart2,
   PieChart as PieIcon,
   Package,
-  Calendar,
-  DollarSign,
   ShoppingBag,
-  ArrowUpRight,
 } from 'lucide-react';
 import { useStore } from '../../context/StoreContext';
-import {
-  salesTrendDaily,
-  salesTrendWeekly,
-  salesTrendMonthly,
-  topProductsData,
-  categoryDistribution,
-} from '../../data/mockData';
 import { formatPrice } from '../../utils/formatters';
 
 const COLORS = ['#10b981', '#3b82f6', '#8b5cf6', '#f59e0b', '#ec4899', '#6366f1'];
@@ -42,7 +31,7 @@ export const AdminAnalytics: React.FC = () => {
   const { language, currency, t, orders, products, settings } = useStore();
   const [salesTimeframe, setSalesTimeframe] = useState<'daily' | 'weekly' | 'monthly'>('daily');
 
-  // Dynamic status distribution from real orders in context
+  // Dynamic order status distribution from real orders
   const orderStatusCounts = {
     pending: orders.filter((o) => o.status === 'pending').length,
     processing: orders.filter((o) => o.status === 'processing').length,
@@ -60,38 +49,77 @@ export const AdminAnalytics: React.FC = () => {
     { name: language === 'ur' ? 'منسوخ (Cancelled)' : 'Cancelled', count: orderStatusCounts.cancelled, color: '#ef4444' },
   ].filter(d => d.count > 0);
 
-  // Stock levels from real products in context
+  // Stock levels from real products in Firestore
   const stockData = products.slice(0, 8).map((p) => ({
     name: p.title.length > 18 ? p.title.substring(0, 18) + '...' : p.title,
     stock: p.stock,
     price: p.price,
   }));
 
+  // Computing Category Share from Real Products
+  const categoryCountMap: Record<string, number> = {};
+  products.forEach((p) => {
+    categoryCountMap[p.category] = (categoryCountMap[p.category] || 0) + 1;
+  });
+
+  const categoryDistribution = Object.keys(categoryCountMap).map((catKey, index) => ({
+    name: catKey.toUpperCase(),
+    value: Math.round((categoryCountMap[catKey] / (products.length || 1)) * 100),
+    color: COLORS[index % COLORS.length],
+  }));
+
+  // Computing Top Selling Products from Live Orders
+  const productSalesMap: Record<string, { name: string; units: number }> = {};
+  orders.forEach((o) => {
+    o.items?.forEach((item) => {
+      const pId = item.product.id;
+      if (!productSalesMap[pId]) {
+        productSalesMap[pId] = { name: item.product.title, units: 0 };
+      }
+      productSalesMap[pId].units += item.quantity;
+    });
+  });
+
+  const topProductsData = Object.values(productSalesMap)
+    .sort((a, b) => b.units - a.units)
+    .slice(0, 5)
+    .map((p) => ({
+      name: p.name.length > 15 ? p.name.substring(0, 15) + '...' : p.name,
+      units: p.units,
+    }));
+
+  // Dynamically group live orders by Date / Period
   const getActiveSalesData = (): Array<{ label: string; sales: number; orders: number }> => {
-    switch (salesTimeframe) {
-      case 'weekly':
-        return salesTrendWeekly.map((item) => ({
-          label: item.period,
-          sales: item.sales,
-          orders: item.orders,
-        }));
-      case 'monthly':
-        return salesTrendMonthly.map((item) => ({
-          label: item.month,
-          sales: item.sales,
-          orders: item.orders,
-        }));
-      default:
-        return salesTrendDaily.map((item) => ({
-          label: item.day,
-          sales: item.sales,
-          orders: item.orders,
-        }));
-    }
+    const groupedSales: Record<string, { sales: number; orders: number }> = {};
+
+    orders.forEach((o) => {
+      const orderDate = new Date(o.createdAt || Date.now());
+      let key = orderDate.toLocaleDateString('en-US', { weekday: 'short' });
+
+      if (salesTimeframe === 'weekly') {
+        key = `Week ${Math.ceil(orderDate.getDate() / 7)}`;
+      } else if (salesTimeframe === 'monthly') {
+        key = orderDate.toLocaleDateString('en-US', { month: 'short' });
+      }
+
+      if (!groupedSales[key]) {
+        groupedSales[key] = { sales: 0, orders: 0 };
+      }
+
+      groupedSales[key].sales += o.totalAmount || 0;
+      groupedSales[key].orders += 1;
+    });
+
+    const result = Object.keys(groupedSales).map((k) => ({
+      label: k,
+      sales: groupedSales[k].sales,
+      orders: groupedSales[k].orders,
+    }));
+
+    return result.length > 0 ? result : [{ label: 'Today', sales: 0, orders: 0 }];
   };
 
   const activeSalesData = getActiveSalesData();
-  const xAxisKey = 'label';
 
   return (
     <div className="space-y-6 animate-in fade-in duration-200">
@@ -106,7 +134,7 @@ export const AdminAnalytics: React.FC = () => {
           </p>
         </div>
 
-        {/* Timeframe selector for sales graph */}
+        {/* Timeframe selector */}
         <div className="flex items-center bg-white p-1 rounded-2xl border border-slate-200 shadow-xs">
           <button
             onClick={() => setSalesTimeframe('daily')}
@@ -141,7 +169,7 @@ export const AdminAnalytics: React.FC = () => {
         </div>
       </div>
 
-      {/* Graph 1: Main Sales & Revenue Line / Area Graph */}
+      {/* Main Sales & Revenue Chart */}
       <div className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200/80 shadow-xs space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2">
@@ -168,7 +196,6 @@ export const AdminAnalytics: React.FC = () => {
           </div>
         </div>
 
-        {/* Recharts Area / Line Chart */}
         <div className="h-72 sm:h-80 w-full pt-2">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={activeSalesData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
@@ -177,17 +204,13 @@ export const AdminAnalytics: React.FC = () => {
                   <stop offset="5%" stopColor="#10b981" stopOpacity={0.4} />
                   <stop offset="95%" stopColor="#10b981" stopOpacity={0.0} />
                 </linearGradient>
-                <linearGradient id="ordersGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
-                  <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.0} />
-                </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-              <XAxis dataKey={xAxisKey} stroke="#94a3b8" fontSize={12} tickLine={false} />
+              <XAxis dataKey="label" stroke="#94a3b8" fontSize={12} tickLine={false} />
               <YAxis stroke="#94a3b8" fontSize={12} tickLine={false} tickFormatter={(val) => `₨ ${(val / 1000).toFixed(0)}k`} />
               <Tooltip
                 formatter={(value: any, name: any) => [
-                  name === 'sales' ? formatPrice(value, currency, settings.usdRate) : value,
+                  name === 'sales' ? formatPrice(value, currency, settings?.usdRate) : value,
                   name === 'sales' ? 'Revenue' : 'Orders Count',
                 ]}
                 contentStyle={{ backgroundColor: '#0f172a', borderRadius: '16px', color: '#fff', border: 'none', fontSize: '12px' }}
@@ -201,7 +224,6 @@ export const AdminAnalytics: React.FC = () => {
 
       {/* Row 2: Top Selling Products Bar Chart & Category Share Pie Chart */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Top Selling Products (Bar Chart) */}
         <div className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200/80 shadow-xs space-y-4">
           <div className="flex items-center gap-2">
             <div className="w-9 h-9 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center font-bold">
@@ -217,7 +239,7 @@ export const AdminAnalytics: React.FC = () => {
 
           <div className="h-64 sm:h-72 w-full pt-2">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={topProductsData} layout="vertical" margin={{ top: 5, right: 20, left: 40, bottom: 5 }}>
+              <BarChart data={topProductsData.length > 0 ? topProductsData : [{ name: 'No Sales Yet', units: 0 }]} layout="vertical" margin={{ top: 5, right: 20, left: 40, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" horizontal={false} />
                 <XAxis type="number" stroke="#94a3b8" fontSize={11} />
                 <YAxis dataKey="name" type="category" stroke="#475569" fontSize={11} width={90} tickLine={false} />
@@ -231,7 +253,7 @@ export const AdminAnalytics: React.FC = () => {
           </div>
         </div>
 
-        {/* Category Share (Pie / Donut Chart) */}
+        {/* Category Share */}
         <div className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200/80 shadow-xs space-y-4">
           <div className="flex items-center gap-2">
             <div className="w-9 h-9 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center font-bold">
@@ -249,7 +271,7 @@ export const AdminAnalytics: React.FC = () => {
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
-                  data={categoryDistribution}
+                  data={categoryDistribution.length > 0 ? categoryDistribution : [{ name: 'EMPTY', value: 100, color: '#e2e8f0' }]}
                   cx="50%"
                   cy="50%"
                   innerRadius={55}
@@ -274,7 +296,6 @@ export const AdminAnalytics: React.FC = () => {
 
       {/* Row 3: Live Order Status Distribution & Inventory Stock Levels */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Order Status Breakdown */}
         <div className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200/80 shadow-xs space-y-4">
           <div className="flex items-center gap-2">
             <div className="w-9 h-9 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center font-bold">
