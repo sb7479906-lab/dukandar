@@ -9,8 +9,6 @@ import {
   ShieldCheck,
   Sparkles,
   ArrowRight,
-  Receipt,
-  RotateCcw,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useStore } from '../context/StoreContext';
@@ -74,32 +72,33 @@ export const CheckoutModal: React.FC = () => {
 
   if (!isCheckoutOpen) return null;
 
-  const isFreeDelivery = cartSubtotal >= settings.freeDeliveryThreshold;
+  const freeDeliveryThreshold = settings?.freeDeliveryThreshold || 3000;
+  const isFreeDelivery = cartSubtotal >= freeDeliveryThreshold;
   const deliveryFee =
     deliveryMethod === 'express'
-      ? settings.expressDeliveryFee
+      ? (settings?.expressDeliveryFee || 450)
       : isFreeDelivery
       ? 0
-      : settings.standardDeliveryFee;
+      : (settings?.standardDeliveryFee || 200);
 
   const orderTotal = Math.max(0, cartSubtotal - cartDiscount + deliveryFee);
 
-  const handleSubmitOrder = (e: React.FormEvent) => {
+  const handleSubmitOrder = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || !phone.trim() || !address.trim()) return;
 
     setIsSubmitting(true);
 
-    setTimeout(() => {
-      const placed = placeOrder({
+    try {
+      const placed = await placeOrder({
         customer: {
-          name,
-          email: email || 'customer@dukandar.pk',
-          phone,
-          address,
+          name: name.trim(),
+          email: email.trim() || 'customer@dukandar.pk',
+          phone: phone.trim(),
+          address: address.trim(),
           city,
           postalCode,
-          notes,
+          notes: notes.trim(),
         },
         items: cart,
         subtotal: cartSubtotal,
@@ -113,7 +112,6 @@ export const CheckoutModal: React.FC = () => {
         paymentStatus: paymentMethod === 'cod' ? 'pending' : 'paid',
       });
 
-      setIsSubmitting(false);
       setOrderCompleted(placed);
 
       // Trigger Confetti Celebration
@@ -126,7 +124,12 @@ export const CheckoutModal: React.FC = () => {
       } catch (err) {
         console.error('Confetti error', err);
       }
-    }, 1200);
+    } catch (err) {
+      console.error('Failed to place order:', err);
+      alert(language === 'ur' ? 'آرڈر دینے میں ناکامی ہوئی!' : 'Failed to submit order. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleTrackPlacedOrder = () => {
@@ -205,7 +208,7 @@ export const CheckoutModal: React.FC = () => {
               <div className="flex justify-between font-extrabold text-slate-900 pt-2 border-t border-slate-200">
                 <span>{t('total')}:</span>
                 <span className="text-emerald-700 font-black text-base">
-                  {formatPrice(orderCompleted.total, currency, settings.usdRate)}
+                  {formatPrice(orderCompleted.total, currency, settings?.usdRate)}
                 </span>
               </div>
             </div>
@@ -360,7 +363,7 @@ export const CheckoutModal: React.FC = () => {
                       {isFreeDelivery ? (
                         <span className="text-emerald-700 font-bold uppercase">{t('freeDelivery')}</span>
                       ) : (
-                        formatPrice(settings.standardDeliveryFee, currency, settings.usdRate)
+                        formatPrice(settings?.standardDeliveryFee || 200, currency, settings?.usdRate)
                       )}
                     </div>
                   </div>
@@ -386,7 +389,7 @@ export const CheckoutModal: React.FC = () => {
                       {t('expressDelivery')}
                     </div>
                     <div className="text-xs text-slate-500 mt-0.5">
-                      {formatPrice(settings.expressDeliveryFee, currency, settings.usdRate)} (Priority Trax Express)
+                      {formatPrice(settings?.expressDeliveryFee || 450, currency, settings?.usdRate)} (Priority Trax Express)
                     </div>
                   </div>
                 </label>
@@ -532,13 +535,13 @@ export const CheckoutModal: React.FC = () => {
               <div className="flex justify-between">
                 <span className="text-slate-600">{t('subtotal')}:</span>
                 <span className="font-bold text-slate-900">
-                  {formatPrice(cartSubtotal, currency, settings.usdRate)}
+                  {formatPrice(cartSubtotal, currency, settings?.usdRate)}
                 </span>
               </div>
               {cartDiscount > 0 && (
                 <div className="flex justify-between text-emerald-700 font-semibold">
                   <span>{t('discount')}:</span>
-                  <span>-{formatPrice(cartDiscount, currency, settings.usdRate)}</span>
+                  <span>-{formatPrice(cartDiscount, currency, settings?.usdRate)}</span>
                 </div>
               )}
               <div className="flex justify-between">
@@ -547,14 +550,14 @@ export const CheckoutModal: React.FC = () => {
                   {deliveryFee === 0 ? (
                     <span className="text-emerald-700 uppercase font-bold">{t('freeDelivery')}</span>
                   ) : (
-                    formatPrice(deliveryFee, currency, settings.usdRate)
+                    formatPrice(deliveryFee, currency, settings?.usdRate)
                   )}
                 </span>
               </div>
               <div className="flex justify-between font-black text-base text-slate-900 pt-2 border-t border-slate-200">
                 <span>{t('total')}:</span>
                 <span className="text-emerald-700 text-lg">
-                  {formatPrice(orderTotal, currency, settings.usdRate)}
+                  {formatPrice(orderTotal, currency, settings?.usdRate)}
                 </span>
               </div>
             </div>
