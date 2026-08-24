@@ -20,7 +20,14 @@ const iconMap: Record<string, React.ReactNode> = {
 };
 
 export const CategorySection: React.FC = () => {
-  const { categories, selectedCategory, setSelectedCategory, language, t, products } = useStore();
+  const {
+    categories = [],
+    selectedCategory,
+    setSelectedCategory,
+    language,
+    t,
+    products = [],
+  } = useStore();
 
   return (
     <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
@@ -30,7 +37,9 @@ export const CategorySection: React.FC = () => {
             {t('categories')}
           </h2>
           <p className="text-xs sm:text-sm text-slate-500">
-            {language === 'ur' ? 'اپنی من پسند کیٹیگری منتخب کریں' : 'Browse items by departmental collections'}
+            {language === 'ur'
+              ? 'اپنی من پسند کیٹیگری منتخب کریں'
+              : 'Browse items by departmental collections'}
           </p>
         </div>
 
@@ -44,7 +53,7 @@ export const CategorySection: React.FC = () => {
         )}
       </div>
 
-      {/* Categories Horizontal Carousel / Grid */}
+      {/* Categories Grid */}
       <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-7 gap-2.5 sm:gap-3">
         {/* 'All' Category Card */}
         <button
