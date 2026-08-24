@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Tag, Plus, Trash2, CheckCircle2, XCircle, X, Sparkles } from 'lucide-react';
+import { Tag, Plus, Trash2, CheckCircle2, X } from 'lucide-react';
 import { useStore } from '../../context/StoreContext';
 import { formatPrice } from '../../utils/formatters';
 
@@ -10,13 +10,16 @@ export const AdminCoupons: React.FC = () => {
   const [code, setCode] = useState('');
   const [discountPercent, setDiscountPercent] = useState<number>(15);
   const [minSpend, setMinSpend] = useState<number>(2000);
-  const [expiryDate, setExpiryDate] = useState('2026-12-31');
+  
+  // Set dynamic default expiry date (1 month ahead from current time)
+  const defaultExpiry = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+  const [expiryDate, setExpiryDate] = useState(defaultExpiry);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!code.trim()) return;
 
-    addCoupon({
+    await addCoupon({
       code: code.trim().toUpperCase(),
       discountPercent: Number(discountPercent),
       minSpend: Number(minSpend),
@@ -29,6 +32,7 @@ export const AdminCoupons: React.FC = () => {
     setCode('');
     setDiscountPercent(15);
     setMinSpend(2000);
+    setExpiryDate(defaultExpiry);
   };
 
   return (
@@ -87,7 +91,7 @@ export const AdminCoupons: React.FC = () => {
               <div className="flex justify-between">
                 <span>Min Order Spend:</span>
                 <span className="font-semibold text-slate-800">
-                  {formatPrice(c.minSpend, currency, settings.usdRate)}
+                  {formatPrice(c.minSpend, currency, settings?.usdRate)}
                 </span>
               </div>
               <div className="flex justify-between">
@@ -96,7 +100,7 @@ export const AdminCoupons: React.FC = () => {
               </div>
               <div className="flex justify-between">
                 <span>Times Redeemed:</span>
-                <span className="font-bold text-slate-900">{c.usageCount} times</span>
+                <span className="font-bold text-slate-900">{c.usageCount || 0} times</span>
               </div>
             </div>
 
