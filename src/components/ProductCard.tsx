@@ -35,7 +35,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
 
   const handleWhatsAppInquiry = (e: React.MouseEvent) => {
     e.stopPropagation();
-    const url = generateWhatsAppProductInquiryUrl(settings.whatsappNumber, product);
+    const whatsappNum = settings?.whatsappNumber || '923001234567';
+    const url = generateWhatsAppProductInquiryUrl(whatsappNum, product);
     window.open(url, '_blank');
   };
 
@@ -51,6 +52,10 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
     toggleWishlist(product.id);
   };
 
+  const productImage = product.images?.[0] || 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800&auto=format&fit=crop&q=80';
+  const titleText = language === 'ur' ? (product.titleUrdu || product.title) : product.title;
+  const categoryText = language === 'ur' ? (product.categoryUrdu || product.category) : product.category;
+
   return (
     <div
       onClick={() => setActiveProductModal(product)}
@@ -59,8 +64,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
       {/* Product Image Container */}
       <div className="relative aspect-square w-full bg-slate-100 overflow-hidden">
         <img
-          src={product.images[0]}
-          alt={product.title}
+          src={productImage}
+          alt={titleText}
           className="w-full h-full object-cover object-center group-hover:scale-108 transition-transform duration-500"
           loading="lazy"
         />
@@ -125,7 +130,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           {/* Category & Rating */}
           <div className="flex items-center justify-between text-xs text-slate-400 mb-1.5">
             <span className="font-semibold uppercase tracking-wider text-[11px] text-emerald-600">
-              {language === 'ur' ? product.categoryUrdu : product.category}
+              {categoryText}
             </span>
 
             <div className="flex items-center gap-1 text-slate-700 font-bold bg-amber-50 px-1.5 py-0.5 rounded-md">
@@ -139,7 +144,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
 
           {/* Title */}
           <h3 className="font-bold text-sm sm:text-base text-slate-900 line-clamp-2 group-hover:text-emerald-600 transition-colors">
-            {language === 'ur' ? product.titleUrdu : product.title}
+            {titleText}
           </h3>
 
           {/* Colors Swatches Preview */}
@@ -165,20 +170,22 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           <div className="flex items-baseline justify-between gap-2">
             <div>
               <div className="text-base sm:text-lg font-black text-slate-900">
-                {formatPrice(product.price, currency, settings.usdRate)}
+                {formatPrice(product.price, currency, settings?.usdRate)}
               </div>
               {product.originalPrice > product.price && (
                 <div className="text-xs text-slate-400 line-through">
-                  {formatPrice(product.originalPrice, currency, settings.usdRate)}
+                  {formatPrice(product.originalPrice, currency, settings?.usdRate)}
                 </div>
               )}
             </div>
 
             {/* In Stock Pill */}
-            <div className="text-[11px] font-semibold text-emerald-600 flex items-center gap-1">
-              <Check className="w-3.5 h-3.5" />
-              <span>{t('inStock')}</span>
-            </div>
+            {!isOutOfStock && (
+              <div className="text-[11px] font-semibold text-emerald-600 flex items-center gap-1">
+                <Check className="w-3.5 h-3.5" />
+                <span>{t('inStock')}</span>
+              </div>
+            )}
           </div>
 
           {/* Action Row */}
