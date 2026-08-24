@@ -3,12 +3,9 @@ import {
   X,
   MessageCircle,
   Phone,
-  Mail,
   HelpCircle,
   Send,
-  Sparkles,
   Bot,
-  User,
 } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 
@@ -38,7 +35,6 @@ export const CustomerSupportModal: React.FC = () => {
     isSupportOpen,
     setIsSupportOpen,
     language,
-    t,
     settings,
   } = useStore();
 
@@ -54,6 +50,9 @@ export const CustomerSupportModal: React.FC = () => {
   const [chatInput, setChatInput] = useState('');
 
   if (!isSupportOpen) return null;
+
+  const whatsappNum = settings?.whatsappNumber || '923001234567';
+  const phoneNum = settings?.phone || '0300-1234567';
 
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
@@ -76,7 +75,7 @@ export const CustomerSupportModal: React.FC = () => {
         botReply =
           language === 'ur'
             ? 'ہماری معیاری ڈلیوری 2 سے 4 دن میں اور ایکسپریس 24 گھنٹے میں پہنچتی ہے۔'
-            : 'Standard delivery takes 2-4 working days across Pakistan, with free delivery on orders over Rs. 4,000!';
+            : 'Standard delivery takes 2-4 working days across Pakistan, with free delivery on orders over Rs. 3,000!';
       } else if (lower.includes('payment') || lower.includes('cod') || lower.includes('پیسے')) {
         botReply =
           language === 'ur'
@@ -97,7 +96,7 @@ export const CustomerSupportModal: React.FC = () => {
     const message = encodeURIComponent(
       'Salam! I need assistance regarding my shopping / order on Dukandar store.'
     );
-    window.open(`https://wa.me/${settings.whatsappNumber}?text=${message}`, '_blank');
+    window.open(`https://wa.me/${whatsappNum}?text=${message}`, '_blank');
   };
 
   return (
@@ -144,12 +143,12 @@ export const CustomerSupportModal: React.FC = () => {
                 <h4 className="text-xs sm:text-sm font-bold">
                   {language === 'ur' ? 'واٹس ایپ پر رابطہ کریں' : 'Chat on WhatsApp'}
                 </h4>
-                <p className="text-[11px] text-emerald-100 font-mono">+{settings.whatsappNumber}</p>
+                <p className="text-[11px] text-emerald-100 font-mono">+{whatsappNum}</p>
               </div>
             </button>
 
             <a
-              href={`tel:${settings.phone}`}
+              href={`tel:${phoneNum}`}
               className="p-4 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl flex items-center gap-3 shadow-md transition-all text-left"
             >
               <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
@@ -159,7 +158,7 @@ export const CustomerSupportModal: React.FC = () => {
                 <h4 className="text-xs sm:text-sm font-bold">
                   {language === 'ur' ? 'ہیلپ لائن کال کریں' : 'Call Store Helpline'}
                 </h4>
-                <p className="text-[11px] text-slate-300 font-mono">{settings.phone}</p>
+                <p className="text-[11px] text-slate-300 font-mono">{phoneNum}</p>
               </div>
             </a>
           </div>
