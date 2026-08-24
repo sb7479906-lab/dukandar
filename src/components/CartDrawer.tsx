@@ -9,8 +9,6 @@ import {
   ArrowRight,
   MessageCircle,
   Truck,
-  Sparkles,
-  CheckCircle2,
 } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 import { formatPrice, generateWhatsAppOrderUrl } from '../utils/formatters';
@@ -42,7 +40,7 @@ export const CartDrawer: React.FC = () => {
 
   if (!isCartOpen) return null;
 
-  const freeShippingThreshold = settings.freeDeliveryThreshold;
+  const freeShippingThreshold = settings?.freeDeliveryThreshold || 3000;
   const freeShippingRemaining = Math.max(0, freeShippingThreshold - cartSubtotal);
   const freeShippingPercent = Math.min(100, Math.round((cartSubtotal / freeShippingThreshold) * 100));
 
@@ -64,7 +62,7 @@ export const CartDrawer: React.FC = () => {
 
   const handleWhatsAppCheckout = () => {
     const url = generateWhatsAppOrderUrl(
-      settings.whatsappNumber,
+      settings?.whatsappNumber || '923001234567',
       cart,
       cartTotal
     );
@@ -114,7 +112,7 @@ export const CartDrawer: React.FC = () => {
                   {freeShippingRemaining === 0
                     ? t('freeDeliveryUnlocked')
                     : t('freeDeliveryNotice', {
-                        amount: formatPrice(freeShippingRemaining, currency, settings.usdRate),
+                        amount: formatPrice(freeShippingRemaining, currency, settings?.usdRate),
                       })}
                 </span>
               </div>
@@ -148,84 +146,89 @@ export const CartDrawer: React.FC = () => {
               </button>
             </div>
           ) : (
-            cart.map((item, idx) => (
-              <div key={idx} className="py-3.5 flex items-center gap-3">
-                <img
-                  src={item.product.images[0]}
-                  alt={item.product.title}
-                  className="w-16 h-16 object-cover rounded-xl border border-slate-200 shrink-0"
-                />
+            cart.map((item, idx) => {
+              const itemImg = item.product?.images?.[0] || 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800&auto=format&fit=crop&q=80';
+              const itemTitle = language === 'ur' ? (item.product?.titleUrdu || item.product?.title) : item.product?.title;
 
-                <div className="flex-1 min-w-0">
-                  <h4 className="text-xs sm:text-sm font-bold text-slate-900 truncate">
-                    {language === 'ur' ? item.product.titleUrdu : item.product.title}
-                  </h4>
+              return (
+                <div key={idx} className="py-3.5 flex items-center gap-3">
+                  <img
+                    src={itemImg}
+                    alt={itemTitle}
+                    className="w-16 h-16 object-cover rounded-xl border border-slate-200 shrink-0"
+                  />
 
-                  <div className="flex items-center gap-2 mt-0.5 text-[11px] text-slate-500">
-                    {item.selectedSize && <span>Size: {item.selectedSize}</span>}
-                    {item.selectedColor && (
-                      <span className="flex items-center gap-1">
-                        <span
-                          className="w-2.5 h-2.5 rounded-full border border-slate-300"
-                          style={{ backgroundColor: item.selectedColor.hex }}
-                        />
-                        {item.selectedColor.name}
-                      </span>
-                    )}
+                  <div className="flex-1 min-w-0">
+                    <h4 className="text-xs sm:text-sm font-bold text-slate-900 truncate">
+                      {itemTitle}
+                    </h4>
+
+                    <div className="flex items-center gap-2 mt-0.5 text-[11px] text-slate-500">
+                      {item.selectedSize && <span>Size: {item.selectedSize}</span>}
+                      {item.selectedColor && (
+                        <span className="flex items-center gap-1">
+                          <span
+                            className="w-2.5 h-2.5 rounded-full border border-slate-300"
+                            style={{ backgroundColor: item.selectedColor.hex }}
+                          />
+                          {item.selectedColor.name}
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="text-xs font-extrabold text-slate-900 mt-1">
+                      {formatPrice((item.product?.price || 0) * item.quantity, currency, settings?.usdRate)}
+                    </div>
                   </div>
 
-                  <div className="text-xs font-extrabold text-slate-900 mt-1">
-                    {formatPrice(item.product.price * item.quantity, currency, settings.usdRate)}
-                  </div>
-                </div>
+                  {/* Quantity Controls & Delete */}
+                  <div className="flex flex-col items-end gap-1.5 shrink-0">
+                    <div className="flex items-center border border-slate-200 rounded-lg bg-slate-50">
+                      <button
+                        onClick={() =>
+                          updateCartQuantity(
+                            item.product.id,
+                            item.quantity - 1,
+                            item.selectedColor?.name,
+                            item.selectedSize
+                          )
+                        }
+                        className="p-1 hover:bg-slate-200 text-slate-600 cursor-pointer"
+                      >
+                        <Minus className="w-3 h-3" />
+                      </button>
+                      <span className="px-2 text-xs font-bold text-slate-900">{item.quantity}</span>
+                      <button
+                        onClick={() =>
+                          updateCartQuantity(
+                            item.product.id,
+                            item.quantity + 1,
+                            item.selectedColor?.name,
+                            item.selectedSize
+                          )
+                        }
+                        className="p-1 hover:bg-slate-200 text-slate-600 cursor-pointer"
+                      >
+                        <Plus className="w-3 h-3" />
+                      </button>
+                    </div>
 
-                {/* Quantity Controls & Delete */}
-                <div className="flex flex-col items-end gap-1.5 shrink-0">
-                  <div className="flex items-center border border-slate-200 rounded-lg bg-slate-50">
                     <button
                       onClick={() =>
-                        updateCartQuantity(
+                        removeFromCart(
                           item.product.id,
-                          item.quantity - 1,
                           item.selectedColor?.name,
                           item.selectedSize
                         )
                       }
-                      className="p-1 hover:bg-slate-200 text-slate-600 cursor-pointer"
+                      className="text-slate-400 hover:text-rose-500 p-1 cursor-pointer"
                     >
-                      <Minus className="w-3 h-3" />
-                    </button>
-                    <span className="px-2 text-xs font-bold text-slate-900">{item.quantity}</span>
-                    <button
-                      onClick={() =>
-                        updateCartQuantity(
-                          item.product.id,
-                          item.quantity + 1,
-                          item.selectedColor?.name,
-                          item.selectedSize
-                        )
-                      }
-                      className="p-1 hover:bg-slate-200 text-slate-600 cursor-pointer"
-                    >
-                      <Plus className="w-3 h-3" />
+                      <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   </div>
-
-                  <button
-                    onClick={() =>
-                      removeFromCart(
-                        item.product.id,
-                        item.selectedColor?.name,
-                        item.selectedSize
-                      )
-                    }
-                    className="text-slate-400 hover:text-rose-500 p-1 cursor-pointer"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
 
@@ -281,14 +284,14 @@ export const CartDrawer: React.FC = () => {
               <div className="flex justify-between">
                 <span>{t('subtotal')}</span>
                 <span className="font-bold text-slate-900">
-                  {formatPrice(cartSubtotal, currency, settings.usdRate)}
+                  {formatPrice(cartSubtotal, currency, settings?.usdRate)}
                 </span>
               </div>
 
               {cartDiscount > 0 && (
                 <div className="flex justify-between text-emerald-700 font-semibold">
                   <span>{t('discount')}</span>
-                  <span>-{formatPrice(cartDiscount, currency, settings.usdRate)}</span>
+                  <span>-{formatPrice(cartDiscount, currency, settings?.usdRate)}</span>
                 </div>
               )}
 
@@ -300,7 +303,7 @@ export const CartDrawer: React.FC = () => {
                       {t('freeDelivery')}
                     </span>
                   ) : (
-                    formatPrice(cartDeliveryFee, currency, settings.usdRate)
+                    formatPrice(cartDeliveryFee, currency, settings?.usdRate)
                   )}
                 </span>
               </div>
@@ -308,7 +311,7 @@ export const CartDrawer: React.FC = () => {
               <div className="flex justify-between text-sm sm:text-base font-black text-slate-900 pt-2 border-t border-slate-200">
                 <span>{t('total')}</span>
                 <span className="text-emerald-700">
-                  {formatPrice(cartTotal, currency, settings.usdRate)}
+                  {formatPrice(cartTotal, currency, settings?.usdRate)}
                 </span>
               </div>
             </div>
