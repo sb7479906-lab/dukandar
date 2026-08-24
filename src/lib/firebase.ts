@@ -9,14 +9,14 @@ import {
 } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 
-// Cloudflare Environment Variables Se Read Ho Raha Hai
+// Cloudflare Environment Variables & Local Fallback
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyCv6Xr40_dhA4GjLiISjutt9BJLxeHD1ks",
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "rehan-haidar.firebaseapp.com",
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "rehan-haidar",
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "rehan-haidar.firebasestorage.app",
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "450436831043",
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:450436831043:web:e2b3b9b368011523d401f6",
 };
 
 const app = initializeApp(firebaseConfig);
