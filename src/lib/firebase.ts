@@ -10,27 +10,27 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 import { getFirestore } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
+// New Updated Firebase Config (rehan-haidar)
 const firebaseConfig = {
-  apiKey: "AIzaSyB8IepGW8g7qZ3mZ-abap51wW3GTCRjw-o",
-  authDomain: "zees-global-environment.firebaseapp.com",
-  databaseURL: "https://zees-global-environment-default-rtdb.firebaseio.com",
-  projectId: "zees-global-environment",
-  storageBucket: "zees-global-environment.firebasestorage.app",
-  messagingSenderId: "1040517613538",
-  appId: "1:1040517613538:web:733be845bb11241f2edbbb",
-  measurementId: "G-3PHJMV7WYN"
+  apiKey: "AIzaSyCv6Xr40_dhA4GjLiISjutt9BJLxeHD1ks",
+  authDomain: "rehan-haidar.firebaseapp.com",
+  projectId: "rehan-haidar",
+  storageBucket: "rehan-haidar.firebasestorage.app",
+  messagingSenderId: "450436831043",
+  appId: "1:450436831043:web:e2b3b9b368011523d401f6",
+  measurementId: "G-0VNFLZS2P9"
 };
 
-// Initialize Firebase
+// Initialize Firebase App
 const app = initializeApp(firebaseConfig);
 export const analytics = typeof window !== "undefined" ? getAnalytics(app) : null;
 
-// Auth & Database Services
+// Export Auth & Database Services
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const googleProvider = new GoogleAuthProvider();
 
-// Google Sign-In Function
+// Google Sign-In Helper Function
 export const loginWithGoogle = async () => {
   try {
     const result = await signInWithPopup(auth, googleProvider);
