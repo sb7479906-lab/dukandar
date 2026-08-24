@@ -219,7 +219,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         await setDoc(doc(db, 'settings', 'store_config'), defaultSettings);
       }
     } catch (err) {
-      console.warn("Firestore Seed notice / offline fallback:", err);
+      console.warn("Firestore Seed notice / fallback mode active:", err);
     }
   };
 
@@ -227,29 +227,49 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   useEffect(() => {
     seedFirestore();
 
-    const unsubProducts = onSnapshot(collection(db, 'products'), (snapshot) => {
-      const data = snapshot.docs.map((d) => ({ id: d.id, ...d.data() })) as Product[];
-      setProducts(data.length > 0 ? data : initialProducts);
-    });
+    const unsubProducts = onSnapshot(
+      collection(db, 'products'),
+      (snapshot) => {
+        const data = snapshot.docs.map((d) => ({ id: d.id, ...d.data() })) as Product[];
+        setProducts(data.length > 0 ? data : initialProducts);
+      },
+      (error) => console.warn("Firestore Products snapshot listener error:", error)
+    );
 
-    const unsubCoupons = onSnapshot(collection(db, 'coupons'), (snapshot) => {
-      const data = snapshot.docs.map((d) => ({ id: d.id, ...d.data() })) as Coupon[];
-      setCoupons(data.length > 0 ? data : initialCoupons);
-    });
+    const unsubCoupons = onSnapshot(
+      collection(db, 'coupons'),
+      (snapshot) => {
+        const data = snapshot.docs.map((d) => ({ id: d.id, ...d.data() })) as Coupon[];
+        setCoupons(data.length > 0 ? data : initialCoupons);
+      },
+      (error) => console.warn("Firestore Coupons snapshot listener error:", error)
+    );
 
-    const unsubOrders = onSnapshot(collection(db, 'orders'), (snapshot) => {
-      const data = snapshot.docs.map((d) => ({ id: d.id, ...d.data() })) as Order[];
-      setOrders(data.length > 0 ? data : initialOrders);
-    });
+    const unsubOrders = onSnapshot(
+      collection(db, 'orders'),
+      (snapshot) => {
+        const data = snapshot.docs.map((d) => ({ id: d.id, ...d.data() })) as Order[];
+        setOrders(data.length > 0 ? data : initialOrders);
+      },
+      (error) => console.warn("Firestore Orders snapshot listener error:", error)
+    );
 
-    const unsubCustomers = onSnapshot(collection(db, 'customers'), (snapshot) => {
-      const data = snapshot.docs.map((d) => ({ id: d.id, ...d.data() })) as Customer[];
-      setCustomers(data.length > 0 ? data : initialCustomers);
-    });
+    const unsubCustomers = onSnapshot(
+      collection(db, 'customers'),
+      (snapshot) => {
+        const data = snapshot.docs.map((d) => ({ id: d.id, ...d.data() })) as Customer[];
+        setCustomers(data.length > 0 ? data : initialCustomers);
+      },
+      (error) => console.warn("Firestore Customers snapshot listener error:", error)
+    );
 
-    const unsubSettings = onSnapshot(doc(db, 'settings', 'store_config'), (docSnap) => {
-      if (docSnap.exists()) setSettings(docSnap.data() as StoreSettings);
-    });
+    const unsubSettings = onSnapshot(
+      doc(db, 'settings', 'store_config'),
+      (docSnap) => {
+        if (docSnap.exists()) setSettings(docSnap.data() as StoreSettings);
+      },
+      (error) => console.warn("Firestore Settings snapshot listener error:", error)
+    );
 
     // Firebase Auth Observer
     const unsubAuth = onAuthStateChanged(auth, (user) => {
