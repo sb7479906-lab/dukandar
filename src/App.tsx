@@ -124,7 +124,7 @@ const MainAppContent: React.FC = () => {
       {/* Top Announcement Bar */}
       <div className="bg-gradient-to-r from-emerald-800 via-emerald-700 to-teal-800 text-white text-[11px] sm:text-xs py-2 px-4 text-center font-bold tracking-wide flex items-center justify-center gap-2">
         <Sparkles className="w-3.5 h-3.5 text-amber-300 animate-pulse" />
-        <span>{language === 'ur' ? settings?.announcementUr : settings?.announcementEn}</span>
+        <span>{language === 'ur' ? settings?.announcementTextUrdu : settings?.announcementText}</span>
       </div>
 
       {/* Main Store Navbar */}
@@ -144,7 +144,7 @@ const MainAppContent: React.FC = () => {
             <div className="flex items-center gap-2">
               <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
                 {selectedCategory === 'all'
-                  ? t('allProducts')
+                  ? t('allCategories')
                   : language === 'ur'
                   ? activeCategoryObj?.nameUrdu
                   : activeCategoryObj?.name}
@@ -271,7 +271,7 @@ const MainAppContent: React.FC = () => {
               }}
               className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-2.5 px-6 rounded-xl cursor-pointer"
             >
-              {t('allProducts')}
+              {t('allCategories')}
             </button>
           </div>
         ) : (
@@ -324,7 +324,7 @@ const MainAppContent: React.FC = () => {
       <div className="fixed bottom-5 right-5 z-40 flex flex-col items-end gap-3">
         <button
           onClick={() => {
-            const url = `https://wa.me/${settings?.whatsappNumber || '923000000000'}?text=${encodeURIComponent(
+            const url = `https://wa.me/${settings?.whatsappNumber || '923008899776'}?text=${encodeURIComponent(
               'Salam! I want to inquire about products on Dukandar store.'
             )}`;
             window.open(url, '_blank');
