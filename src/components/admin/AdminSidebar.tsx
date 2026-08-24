@@ -12,7 +12,7 @@ import { useStore } from '../../context/StoreContext';
 import { AdminTab } from '../../types';
 
 export const AdminSidebar: React.FC = () => {
-  const { adminTab, setAdminTab, language, t, orders, products } = useStore();
+  const { adminTab, setAdminTab, t, orders = [], products = [] } = useStore();
 
   const navItems: Array<{ id: AdminTab; label: string; icon: React.ReactNode; badge?: number }> = [
     {
