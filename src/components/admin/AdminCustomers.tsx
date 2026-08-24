@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Users, Phone, Mail, MapPin, ShoppingBag, DollarSign } from 'lucide-react';
+import { Search, Phone, Mail, MapPin, User } from 'lucide-react';
 import { useStore } from '../../context/StoreContext';
 import { formatPrice } from '../../utils/formatters';
 
@@ -9,10 +9,10 @@ export const AdminCustomers: React.FC = () => {
 
   const filteredCustomers = customers.filter(
     (c) =>
-      c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      c.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      c.phone.includes(searchQuery) ||
-      c.city.toLowerCase().includes(searchQuery.toLowerCase())
+      c.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      c.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      c.phone?.includes(searchQuery) ||
+      c.city?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
@@ -44,62 +44,76 @@ export const AdminCustomers: React.FC = () => {
       </div>
 
       {/* Customer Directory Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filteredCustomers.map((cust) => (
-          <div
-            key={cust.id}
-            className="bg-white rounded-3xl p-5 border border-slate-200/80 shadow-xs space-y-4 hover:border-emerald-500/40 transition-colors"
-          >
-            <div className="flex items-center gap-3">
-              <img
-                src={cust.avatar}
-                alt={cust.name}
-                className="w-12 h-12 rounded-2xl object-cover ring-2 ring-slate-100"
-              />
-              <div>
-                <h3 className="font-extrabold text-sm text-slate-900">{cust.name}</h3>
-                <p className="text-[11px] text-slate-400">Joined: {cust.joinedDate}</p>
+      {filteredCustomers.length === 0 ? (
+        <div className="text-center py-12 bg-white rounded-3xl border border-slate-200 text-slate-500 text-xs font-bold">
+          {language === 'ur' ? 'کوئی کسٹمر نہیں ملا' : 'No customers match your search.'}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filteredCustomers.map((cust) => (
+            <div
+              key={cust.id}
+              className="bg-white rounded-3xl p-5 border border-slate-200/80 shadow-xs space-y-4 hover:border-emerald-500/40 transition-colors"
+            >
+              <div className="flex items-center gap-3">
+                {cust.avatar ? (
+                  <img
+                    src={cust.avatar}
+                    alt={cust.name}
+                    className="w-12 h-12 rounded-2xl object-cover ring-2 ring-slate-100"
+                  />
+                ) : (
+                  <div className="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold">
+                    <User className="w-6 h-6" />
+                  </div>
+                )}
+                <div>
+                  <h3 className="font-extrabold text-sm text-slate-900">{cust.name}</h3>
+                  <p className="text-[11px] text-slate-400">
+                    Joined: {cust.joinedDate || 'N/A'}
+                  </p>
+                </div>
               </div>
-            </div>
 
-            <div className="space-y-1.5 text-xs text-slate-600 bg-slate-50 p-3 rounded-2xl border border-slate-100">
-              <p className="flex items-center gap-2">
-                <Phone className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                <span>{cust.phone}</span>
-              </p>
-              <p className="flex items-center gap-2 truncate">
-                <Mail className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                <span className="truncate">{cust.email}</span>
-              </p>
-              <p className="flex items-start gap-2">
-                <MapPin className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
-                <span>
-                  {cust.address}, {cust.city}
-                </span>
-              </p>
-            </div>
+              <div className="space-y-1.5 text-xs text-slate-600 bg-slate-50 p-3 rounded-2xl border border-slate-100">
+                <p className="flex items-center gap-2">
+                  <Phone className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                  <span>{cust.phone || 'N/A'}</span>
+                </p>
+                <p className="flex items-center gap-2 truncate">
+                  <Mail className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                  <span className="truncate">{cust.email || 'N/A'}</span>
+                </p>
+                <p className="flex items-start gap-2">
+                  <MapPin className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
+                  <span>
+                    {cust.address || 'Address not set'}{cust.city ? `, ${cust.city}` : ''}
+                  </span>
+                </p>
+              </div>
 
-            <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-100 text-xs">
-              <div>
-                <span className="text-slate-400 block text-[10px] uppercase font-bold">
-                  {t('totalOrders')}
-                </span>
-                <span className="font-extrabold text-slate-900 text-sm">
-                  {cust.totalOrders} Orders
-                </span>
-              </div>
-              <div className="text-right">
-                <span className="text-slate-400 block text-[10px] uppercase font-bold">
-                  Lifetime Spent
-                </span>
-                <span className="font-extrabold text-emerald-700 text-sm">
-                  {formatPrice(cust.totalSpent, currency, settings.usdRate)}
-                </span>
+              <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-100 text-xs">
+                <div>
+                  <span className="text-slate-400 block text-[10px] uppercase font-bold">
+                    {t('totalOrders')}
+                  </span>
+                  <span className="font-extrabold text-slate-900 text-sm">
+                    {cust.totalOrders || 0} Orders
+                  </span>
+                </div>
+                <div className="text-right">
+                  <span className="text-slate-400 block text-[10px] uppercase font-bold">
+                    Lifetime Spent
+                  </span>
+                  <span className="font-extrabold text-emerald-700 text-sm">
+                    {formatPrice(cust.totalSpent || 0, currency, settings?.usdRate)}
+                  </span>
+                </div>
               </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
