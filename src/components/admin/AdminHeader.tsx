@@ -1,10 +1,6 @@
 import React from 'react';
 import {
   Store,
-  Bell,
-  Search,
-  Globe,
-  DollarSign,
   TrendingUp,
   Package,
   AlertTriangle,
@@ -27,7 +23,7 @@ export const AdminHeader: React.FC = () => {
 
   const totalRevenue = orders
     .filter((o) => o.status !== 'cancelled')
-    .reduce((sum, o) => sum + o.total, 0);
+    .reduce((sum, o) => sum + (o.totalAmount || o.total || 0), 0);
 
   const lowStockCount = products.filter((p) => p.stock > 0 && p.stock <= 5).length;
   const pendingOrdersCount = orders.filter((o) => o.status === 'pending').length;
@@ -49,7 +45,9 @@ export const AdminHeader: React.FC = () => {
             </span>
           </div>
           <p className="text-[11px] text-slate-400 hidden sm:block">
-            {language === 'ur' ? 'سٹور کی آمدنی، آرڈرز اور انوینٹری کا انتظام' : 'E-Commerce Operations, Analytics & Inventory Control'}
+            {language === 'ur'
+              ? 'سٹور کی آمدنی، آرڈرز اور انوینٹری کا انتظام'
+              : 'E-Commerce Operations, Analytics & Inventory Control'}
           </p>
         </div>
       </div>
@@ -60,21 +58,27 @@ export const AdminHeader: React.FC = () => {
           <TrendingUp className="w-4 h-4 text-emerald-400" />
           <span className="text-slate-400">{t('totalRevenue')}:</span>
           <span className="font-bold text-white">
-            {formatPrice(totalRevenue, currency, settings.usdRate)}
+            {formatPrice(totalRevenue, currency, settings?.usdRate)}
           </span>
         </div>
 
         {lowStockCount > 0 && (
           <div className="flex items-center gap-1.5 bg-amber-500/10 text-amber-300 px-3 py-1.5 rounded-xl border border-amber-500/30">
             <AlertTriangle className="w-4 h-4 text-amber-400" />
-            <span>{lowStockCount} {language === 'ur' ? 'کم سٹاک اشیاء' : 'Low Stock Items'}</span>
+            <span>
+              {lowStockCount}{' '}
+              {language === 'ur' ? 'کم سٹاک اشیاء' : 'Low Stock Items'}
+            </span>
           </div>
         )}
 
         {pendingOrdersCount > 0 && (
           <div className="flex items-center gap-1.5 bg-blue-500/10 text-blue-300 px-3 py-1.5 rounded-xl border border-blue-500/30">
             <Package className="w-4 h-4 text-blue-400" />
-            <span>{pendingOrdersCount} {language === 'ur' ? 'نئے آرڈرز' : 'Pending Orders'}</span>
+            <span>
+              {pendingOrdersCount}{' '}
+              {language === 'ur' ? 'نئے آرڈرز' : 'Pending Orders'}
+            </span>
           </div>
         )}
       </div>
