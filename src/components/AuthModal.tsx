@@ -25,20 +25,21 @@ export const AuthModal: React.FC = () => {
     e.preventDefault();
     if (!email.trim()) return;
 
-    loginUser(email.trim(), 'customer');
+    loginUser(email.trim(), 'customer', name.trim() || undefined);
     setIsAuthOpen(false);
   };
 
-  // Google Login Handler
+  // Live Firebase Google Sign-In Handler
   const handleGoogleSignIn = async () => {
     try {
       setLoading(true);
       const user = await loginWithGoogle();
       if (user && user.email) {
-        loginUser(user.email, 'customer');
+        loginUser(user.email, 'customer', user.displayName || undefined, user.photoURL || undefined);
         setIsAuthOpen(false);
       }
     } catch (error) {
+      console.error("Google Sign-In error:", error);
       alert(language === 'ur' ? 'گوگل لاگ ان ناکام ہو گیا!' : 'Google Sign-In failed!');
     } finally {
       setLoading(false);
@@ -46,12 +47,12 @@ export const AuthModal: React.FC = () => {
   };
 
   const handleDemoCustomerLogin = () => {
-    loginUser('daniyal.pk@gmail.com', 'customer');
+    loginUser('daniyal.pk@gmail.com', 'customer', 'Muhammad Daniyal');
     setIsAuthOpen(false);
   };
 
   const handleDemoAdminLogin = () => {
-    loginUser('admin@dukandar.pk', 'admin');
+    loginUser('admin@dukandar.pk', 'admin', 'Store Admin');
     setIsAuthOpen(false);
     setActiveView('admin');
   };
