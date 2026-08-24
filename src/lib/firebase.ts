@@ -1,13 +1,14 @@
-import { initializeApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
+// @ts-nocheck
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics.js";
 import { 
   getAuth, 
   GoogleAuthProvider, 
   signInWithPopup, 
   signOut, 
   onAuthStateChanged 
-} from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+import { getFirestore } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyB8IepGW8g7qZ3mZ-abap51wW3GTCRjw-o",
@@ -22,7 +23,7 @@ const firebaseConfig = {
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
-export const analytics = getAnalytics(app);
+export const analytics = typeof window !== "undefined" ? getAnalytics(app) : null;
 
 // Auth & Database Services
 export const auth = getAuth(app);
@@ -42,3 +43,4 @@ export const loginWithGoogle = async () => {
 
 // Logout Function
 export const logoutUser = () => signOut(auth);
+export { onAuthStateChanged };
