@@ -1,16 +1,15 @@
-// @ts-nocheck
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics.js";
+import { initializeApp } from "firebase/app";
+import { getAnalytics } from "firebase/analytics";
 import { 
   getAuth, 
   GoogleAuthProvider, 
   signInWithPopup, 
   signOut, 
   onAuthStateChanged 
-} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-import { getFirestore } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+} from "firebase/auth";
+import { getFirestore } from "firebase/firestore";
 
-// New Updated Firebase Config (rehan-haidar)
+// Updated Firebase Config (rehan-haidar)
 const firebaseConfig = {
   apiKey: "AIzaSyCv6Xr40_dhA4GjLiISjutt9BJLxeHD1ks",
   authDomain: "rehan-haidar.firebaseapp.com",
