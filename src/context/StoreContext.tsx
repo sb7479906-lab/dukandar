@@ -1,24 +1,19 @@
-// @ts-nocheck
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import {
   collection,
   doc,
   getDocs,
   setDoc,
-  addDoc,
   updateDoc,
   deleteDoc,
   onSnapshot,
-  query,
-  orderBy,
-  where
-} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+} from 'firebase/firestore';
 import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signOut,
-  onAuthStateChanged
-} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+  onAuthStateChanged,
+} from 'firebase/auth';
 
 import { db, auth } from '../lib/firebase';
 import {
@@ -71,9 +66,19 @@ interface StoreContextType {
   setPriceRange: (range: [number, number]) => void;
 
   cart: CartItem[];
-  addToCart: (product: Product, quantity?: number, selectedColor?: { name: string; hex: string }, selectedSize?: string) => void;
+  addToCart: (
+    product: Product,
+    quantity?: number,
+    selectedColor?: { name: string; hex: string },
+    selectedSize?: string
+  ) => void;
   removeFromCart: (productId: string, selectedColorName?: string, selectedSize?: string) => void;
-  updateCartQuantity: (productId: string, quantity: number, selectedColorName?: string, selectedSize?: string) => void;
+  updateCartQuantity: (
+    productId: string,
+    quantity: number,
+    selectedColorName?: string,
+    selectedSize?: string
+  ) => void;
   clearCart: () => void;
   cartCount: number;
   cartSubtotal: number;
@@ -103,7 +108,10 @@ interface StoreContextType {
   updateProduct: (productId: string, updates: Partial<Product>) => Promise<void>;
   deleteProduct: (productId: string) => Promise<void>;
 
-  addProductReview: (productId: string, review: Omit<Review, 'id' | 'date' | 'verifiedPurchase'>) => Promise<void>;
+  addProductReview: (
+    productId: string,
+    review: Omit<Review, 'id' | 'date' | 'verifiedPurchase'>
+  ) => Promise<void>;
 
   customers: Customer[];
   currentUser: UserProfile | null;
@@ -148,12 +156,16 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [loading, setLoading] = useState(true);
 
   // Localization
-  const [language, setLanguageState] = useState<Language>(() => (localStorage.getItem('dukandar_lang') as Language) || 'en');
-  const [currency, setCurrency] = useState<Currency>(() => (localStorage.getItem('dukandar_cur') as Currency) || 'PKR');
+  const [language, setLanguageState] = useState<Language>(
+    () => (localStorage.getItem('dukandar_lang') as Language) || 'en'
+  );
+  const [currency, setCurrencyState] = useState<Currency>(
+    () => (localStorage.getItem('dukandar_cur') as Currency) || 'PKR'
+  );
   const [activeView, setActiveView] = useState<'shop' | 'admin'>('shop');
   const [adminTab, setAdminTab] = useState<AdminTab>('dashboard');
 
-  // Firestore Realtime Collections
+  // Firestore Realtime Collections State
   const [categories] = useState<Category[]>(initialCategories);
   const [products, setProducts] = useState<Product[]>([]);
   const [coupons, setCoupons] = useState<Coupon[]>([]);
@@ -161,13 +173,13 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [settings, setSettings] = useState<StoreSettings>(defaultSettings);
 
-  // Filters & State
+  // Filters & Controls
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [sortBy, setSortBy] = useState<string>('featured');
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 500000]);
 
-  // Cart & Wishlist
+  // Cart & Wishlist Local Storage State
   const [cart, setCart] = useState<CartItem[]>(() => {
     const saved = localStorage.getItem('dukandar_cart');
     return saved ? JSON.parse(saved) : [];
@@ -178,13 +190,13 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   });
   const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
 
-  // Auth & UI
+  // User Auth & UI State
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
   const [notifications, setNotifications] = useState<StoreNotification[]>(initialNotifications);
   const [currentTrackingOrder, setCurrentTrackingOrder] = useState<Order | null>(null);
   const [lastPlacedOrder, setLastPlacedOrder] = useState<Order | null>(null);
 
-  // Modals
+  // Drawers & Modals
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isWishlistOpen, setIsWishlistOpen] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
@@ -207,31 +219,31 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         await setDoc(doc(db, 'settings', 'store_config'), defaultSettings);
       }
     } catch (err) {
-      console.warn("Firestore Seed error / connection pending:", err);
+      console.warn("Firestore Seed notice / offline fallback:", err);
     }
   };
 
-  // --- Realtime Subscriptions ---
+  // --- Realtime Firestore Subscriptions ---
   useEffect(() => {
     seedFirestore();
 
     const unsubProducts = onSnapshot(collection(db, 'products'), (snapshot) => {
-      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Product[];
+      const data = snapshot.docs.map((d) => ({ id: d.id, ...d.data() })) as Product[];
       setProducts(data.length > 0 ? data : initialProducts);
     });
 
     const unsubCoupons = onSnapshot(collection(db, 'coupons'), (snapshot) => {
-      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Coupon[];
+      const data = snapshot.docs.map((d) => ({ id: d.id, ...d.data() })) as Coupon[];
       setCoupons(data.length > 0 ? data : initialCoupons);
     });
 
     const unsubOrders = onSnapshot(collection(db, 'orders'), (snapshot) => {
-      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Order[];
+      const data = snapshot.docs.map((d) => ({ id: d.id, ...d.data() })) as Order[];
       setOrders(data.length > 0 ? data : initialOrders);
     });
 
     const unsubCustomers = onSnapshot(collection(db, 'customers'), (snapshot) => {
-      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Customer[];
+      const data = snapshot.docs.map((d) => ({ id: d.id, ...d.data() })) as Customer[];
       setCustomers(data.length > 0 ? data : initialCustomers);
     });
 
@@ -239,7 +251,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       if (docSnap.exists()) setSettings(docSnap.data() as StoreSettings);
     });
 
-    // Auth state observer
+    // Firebase Auth Observer
     const unsubAuth = onAuthStateChanged(auth, (user) => {
       if (user) {
         setCurrentUser({
@@ -268,9 +280,14 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     };
   }, []);
 
-  // Local Storage persistence for Cart & Wishlist
-  useEffect(() => { localStorage.setItem('dukandar_cart', JSON.stringify(cart)); }, [cart]);
-  useEffect(() => { localStorage.setItem('dukandar_wishlist', JSON.stringify(wishlist)); }, [wishlist]);
+  // Sync Cart & Wishlist to Local Storage
+  useEffect(() => {
+    localStorage.setItem('dukandar_cart', JSON.stringify(cart));
+  }, [cart]);
+
+  useEffect(() => {
+    localStorage.setItem('dukandar_wishlist', JSON.stringify(wishlist));
+  }, [wishlist]);
 
   const setLanguage = (lang: Language) => {
     setLanguageState(lang);
@@ -279,11 +296,17 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     document.documentElement.lang = lang;
   };
 
+  const setCurrency = (cur: Currency) => {
+    setCurrencyState(cur);
+    localStorage.setItem('dukandar_cur', cur);
+  };
+
   const t = (key: any, params?: Record<string, string | number>) => getTranslation(language, key, params);
 
   // Cart Calculations
   const cartCount = cart.reduce((acc, item) => acc + item.quantity, 0);
-  const cartSubtotal = cart.reduce((acc, item) => acc + item.product.price * item.quantity, 0);
+  const cartSubtotal = cart.reduce((acc, item) => acc + (item.product?.price || 0) * item.quantity, 0);
+  
   let cartDiscount = 0;
   if (appliedCoupon && cartSubtotal >= appliedCoupon.minSpend) {
     cartDiscount = Math.round((cartSubtotal * appliedCoupon.discountPercent) / 100);
@@ -291,15 +314,26 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       cartDiscount = appliedCoupon.maxDiscount;
     }
   }
-  const isFreeDelivery = cartSubtotal >= settings.freeDeliveryThreshold;
-  const cartDeliveryFee = cart.length === 0 ? 0 : isFreeDelivery ? 0 : settings.standardDeliveryFee;
+
+  const freeThreshold = settings?.freeDeliveryThreshold || 3000;
+  const deliveryFee = settings?.standardDeliveryFee || 200;
+  const isFreeDelivery = cartSubtotal >= freeThreshold;
+  const cartDeliveryFee = cart.length === 0 ? 0 : isFreeDelivery ? 0 : deliveryFee;
   const cartTotal = Math.max(0, cartSubtotal - cartDiscount + cartDeliveryFee);
 
-  // Cart & Wishlist Handlers
-  const addToCart = (product: Product, quantity = 1, selectedColor?: { name: string; hex: string }, selectedSize?: string) => {
+  // Cart Handlers
+  const addToCart = (
+    product: Product,
+    quantity = 1,
+    selectedColor?: { name: string; hex: string },
+    selectedSize?: string
+  ) => {
     setCart((prev) => {
       const idx = prev.findIndex(
-        (item) => item.product.id === product.id && item.selectedColor?.name === selectedColor?.name && item.selectedSize === selectedSize
+        (item) =>
+          item.product.id === product.id &&
+          item.selectedColor?.name === selectedColor?.name &&
+          item.selectedSize === selectedSize
       );
       if (idx > -1) {
         const next = [...prev];
@@ -321,25 +355,53 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       title: 'Item added to Cart 🛍️',
       titleUrdu: 'پروڈکٹ کارٹ میں شامل ہو گئی 🛍️',
       message: `${product.title} was added to cart.`,
-      messageUrdu: `${product.titleUrdu} کارٹ میں شامل کر دی گئی۔`,
+      messageUrdu: `${product.titleUrdu || product.title} کارٹ میں شامل کر دی گئی۔`,
       type: 'promo',
     });
   };
 
   const removeFromCart = (productId: string, selectedColorName?: string, selectedSize?: string) => {
-    setCart((prev) => prev.filter((item) => !(item.product.id === productId && item.selectedColor?.name === selectedColorName && item.selectedSize === selectedSize)));
+    setCart((prev) =>
+      prev.filter(
+        (item) =>
+          !(
+            item.product.id === productId &&
+            item.selectedColor?.name === selectedColorName &&
+            item.selectedSize === selectedSize
+          )
+      )
+    );
   };
 
-  const updateCartQuantity = (productId: string, quantity: number, selectedColorName?: string, selectedSize?: string) => {
+  const updateCartQuantity = (
+    productId: string,
+    quantity: number,
+    selectedColorName?: string,
+    selectedSize?: string
+  ) => {
     if (quantity <= 0) return removeFromCart(productId, selectedColorName, selectedSize);
-    setCart((prev) => prev.map((item) => (item.product.id === productId && item.selectedColor?.name === selectedColorName && item.selectedSize === selectedSize ? { ...item, quantity: Math.min(item.product.stock, quantity) } : item)));
+    setCart((prev) =>
+      prev.map((item) =>
+        item.product.id === productId &&
+        item.selectedColor?.name === selectedColorName &&
+        item.selectedSize === selectedSize
+          ? { ...item, quantity: Math.min(item.product.stock, quantity) }
+          : item
+      )
+    );
   };
 
-  const clearCart = () => { setCart([]); setAppliedCoupon(null); };
+  const clearCart = () => {
+    setCart([]);
+    setAppliedCoupon(null);
+  };
 
   const toggleWishlist = (productId: string) => {
-    setWishlist((prev) => prev.includes(productId) ? prev.filter((id) => id !== productId) : [...prev, productId]);
+    setWishlist((prev) =>
+      prev.includes(productId) ? prev.filter((id) => id !== productId) : [...prev, productId]
+    );
   };
+
   const isInWishlist = (productId: string) => wishlist.includes(productId);
 
   // Coupon Actions
@@ -360,12 +422,14 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const toggleCouponActive = async (couponId: string) => {
-    const target = coupons.find(c => c.id === couponId);
+    const target = coupons.find((c) => c.id === couponId);
     if (target) await updateDoc(doc(db, 'coupons', couponId), { isActive: !target.isActive });
   };
 
-  // Orders Firestore Actions
-  const placeOrder = async (orderData: Omit<Order, 'id' | 'orderNumber' | 'createdAt' | 'trackingHistory'>): Promise<Order> => {
+  // Orders Actions
+  const placeOrder = async (
+    orderData: Omit<Order, 'id' | 'orderNumber' | 'createdAt' | 'trackingHistory'>
+  ): Promise<Order> => {
     const id = `ord-${Date.now()}`;
     const orderNumber = `DKN-${Math.floor(10000 + Math.random() * 90000)}`;
     const now = new Date();
@@ -392,12 +456,12 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     await setDoc(doc(db, 'orders', id), newOrder);
     setLastPlacedOrder(newOrder);
 
-    // Stock updates in Firestore
+    // Update Product Stock Levels in Firestore
     for (const item of orderData.items) {
-      const prod = products.find(p => p.id === item.product.id);
+      const prod = products.find((p) => p.id === item.product.id);
       if (prod) {
         await updateDoc(doc(db, 'products', prod.id), {
-          stock: Math.max(0, prod.stock - item.quantity)
+          stock: Math.max(0, prod.stock - item.quantity),
         });
       }
     }
@@ -407,10 +471,10 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const updateOrderStatus = async (orderId: string, status: OrderStatus, customNote?: string) => {
-    const target = orders.find(o => o.id === orderId);
+    const target = orders.find((o) => o.id === orderId);
     if (!target) return;
 
-    const newHistory = target.trackingHistory.map(s => ({ ...s, current: false }));
+    const newHistory = (target.trackingHistory || []).map((s) => ({ ...s, current: false }));
     newHistory.push({
       status,
       title: status.toUpperCase(),
@@ -425,13 +489,14 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     await updateDoc(doc(db, 'orders', orderId), {
       status,
       paymentStatus: status === 'delivered' ? 'paid' : target.paymentStatus,
-      trackingHistory: newHistory
+      trackingHistory: newHistory,
     });
   };
 
-  const trackOrderByNumber = (orderNumber: string) => orders.find((o) => o.orderNumber.toUpperCase() === orderNumber.trim().toUpperCase()) || null;
+  const trackOrderByNumber = (orderNumber: string) =>
+    orders.find((o) => o.orderNumber.toUpperCase() === orderNumber.trim().toUpperCase()) || null;
 
-  // Products CRUD Operations in Firestore
+  // Products Operations
   const addProduct = async (productData: Omit<Product, 'id' | 'rating' | 'reviewCount'>) => {
     const id = `prod-${Date.now()}`;
     const newProduct: Product = { ...productData, id, rating: 5.0, reviewCount: 1, reviews: [] };
@@ -446,29 +511,36 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     await deleteDoc(doc(db, 'products', productId));
   };
 
-  const addProductReview = async (productId: string, reviewData: Omit<Review, 'id' | 'date' | 'verifiedPurchase'>) => {
-    const prod = products.find(p => p.id === productId);
+  const addProductReview = async (
+    productId: string,
+    reviewData: Omit<Review, 'id' | 'date' | 'verifiedPurchase'>
+  ) => {
+    const prod = products.find((p) => p.id === productId);
     if (!prod) return;
 
-    const newReview: Review = { ...reviewData, id: `rev-${Date.now()}`, date: new Date().toISOString().split('T')[0], verifiedPurchase: true };
+    const newReview: Review = {
+      ...reviewData,
+      id: `rev-${Date.now()}`,
+      date: new Date().toISOString().split('T')[0],
+      verifiedPurchase: true,
+    };
     const updatedReviews = [newReview, ...(prod.reviews || [])];
     const avgRating = updatedReviews.reduce((sum, r) => sum + r.rating, 0) / updatedReviews.length;
 
     await updateDoc(doc(db, 'products', productId), {
       reviews: updatedReviews,
       reviewCount: updatedReviews.length,
-      rating: Number(avgRating.toFixed(1))
+      rating: Number(avgRating.toFixed(1)),
     });
   };
 
-  // Firebase Auth Real Login & Logout
-  const loginUser = async (email: string, pass = "123456", role: 'customer' | 'admin' = 'customer') => {
+  // Auth Operations
+  const loginUser = async (email: string, pass = '123456', role: 'customer' | 'admin' = 'customer') => {
     try {
       await signInWithEmailAndPassword(auth, email, pass);
       if (role === 'admin') setActiveView('admin');
-    } catch (e) {
-      // Auto register if user doesn't exist
-      const userCred = await createUserWithEmailAndPassword(auth, email, pass);
+    } catch {
+      await createUserWithEmailAndPassword(auth, email, pass);
       if (role === 'admin') setActiveView('admin');
     }
   };
@@ -480,10 +552,15 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   // Notifications
   const unreadNotificationCount = notifications.filter((n) => !n.read).length;
-  const markNotificationAsRead = (id: string) => setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)));
-  const markAllNotificationsAsRead = () => setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+  const markNotificationAsRead = (id: string) =>
+    setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)));
+  const markAllNotificationsAsRead = () =>
+    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
   const addNotification = (notif: Omit<StoreNotification, 'id' | 'timestamp' | 'read'>) => {
-    setNotifications((prev) => [{ ...notif, id: `notif-${Date.now()}`, timestamp: 'Just now', read: false }, ...prev]);
+    setNotifications((prev) => [
+      { ...notif, id: `notif-${Date.now()}`, timestamp: 'Just now', read: false },
+      ...prev,
+    ]);
   };
 
   const updateSettings = async (newSettings: Partial<StoreSettings>) => {
@@ -493,17 +570,86 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   return (
     <StoreContext.Provider
       value={{
-        language, setLanguage, currency, setCurrency, activeView, setActiveView, adminTab, setAdminTab, t,
-        categories, products, selectedCategory, setSelectedCategory, searchQuery, setSearchQuery, sortBy, setSortBy, priceRange, setPriceRange,
-        cart, addToCart, removeFromCart, updateCartQuantity, clearCart, cartCount, cartSubtotal, cartDiscount, cartDeliveryFee, cartTotal,
-        wishlist, toggleWishlist, isInWishlist, coupons, appliedCoupon, applyCouponCode, removeCoupon, createCoupon, toggleCouponActive,
-        orders, currentTrackingOrder, setCurrentTrackingOrder, placeOrder, updateOrderStatus, trackOrderByNumber,
-        addProduct, updateProduct, deleteProduct, addProductReview, customers, currentUser, loginUser, logoutUser,
-        notifications, unreadNotificationCount, markNotificationAsRead, markAllNotificationsAsRead, addNotification,
-        settings, updateSettings, isCartOpen, setIsCartOpen, isWishlistOpen, setIsWishlistOpen, isCheckoutOpen, setIsCheckoutOpen,
-        isTrackingOpen, setIsTrackingOpen, isAuthOpen, setIsAuthOpen, isProfileOpen, setIsProfileOpen, isSupportOpen, setIsSupportOpen,
-        isNotificationsOpen, setIsNotificationsOpen, activeProductModal, setActiveProductModal, lastPlacedOrder, setLastPlacedOrder,
-        loading
+        language,
+        setLanguage,
+        currency,
+        setCurrency,
+        activeView,
+        setActiveView,
+        adminTab,
+        setAdminTab,
+        t,
+        categories,
+        products,
+        selectedCategory,
+        setSelectedCategory,
+        searchQuery,
+        setSearchQuery,
+        sortBy,
+        setSortBy,
+        priceRange,
+        setPriceRange,
+        cart,
+        addToCart,
+        removeFromCart,
+        updateCartQuantity,
+        clearCart,
+        cartCount,
+        cartSubtotal,
+        cartDiscount,
+        cartDeliveryFee,
+        cartTotal,
+        wishlist,
+        toggleWishlist,
+        isInWishlist,
+        coupons,
+        appliedCoupon,
+        applyCouponCode,
+        removeCoupon,
+        createCoupon,
+        toggleCouponActive,
+        orders,
+        currentTrackingOrder,
+        setCurrentTrackingOrder,
+        placeOrder,
+        updateOrderStatus,
+        trackOrderByNumber,
+        addProduct,
+        updateProduct,
+        deleteProduct,
+        addProductReview,
+        customers,
+        currentUser,
+        loginUser,
+        logoutUser,
+        notifications,
+        unreadNotificationCount,
+        markNotificationAsRead,
+        markAllNotificationsAsRead,
+        addNotification,
+        settings,
+        updateSettings,
+        isCartOpen,
+        setIsCartOpen,
+        isWishlistOpen,
+        setIsWishlistOpen,
+        isCheckoutOpen,
+        setIsCheckoutOpen,
+        isTrackingOpen,
+        setIsTrackingOpen,
+        isAuthOpen,
+        setIsAuthOpen,
+        isProfileOpen,
+        setIsProfileOpen,
+        isSupportOpen,
+        setIsSupportOpen,
+        isNotificationsOpen,
+        setIsNotificationsOpen,
+        activeProductModal,
+        setActiveProductModal,
+        lastPlacedOrder,
+        setLastPlacedOrder,
+        loading,
       }}
     >
       {children}
