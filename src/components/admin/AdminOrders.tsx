@@ -1,10 +1,7 @@
 import React, { useState } from 'react';
 import {
   Search,
-  Truck,
   Eye,
-  CheckCircle2,
-  Clock,
   Printer,
   ShoppingBag,
   MapPin,
@@ -33,16 +30,20 @@ export const AdminOrders: React.FC = () => {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
   const filteredOrders = orders.filter((o) => {
+    const customerName = o.customerName || o.customer?.name || '';
+    const customerPhone = o.customerPhone || o.customer?.phone || '';
+    const orderNum = o.orderNumber || o.id || '';
+
     const matchesSearch =
-      o.orderNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      o.customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      o.customer.phone.includes(searchQuery);
+      orderNum.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      customerPhone.includes(searchQuery);
     const matchesStatus = filterStatus === 'all' || o.status === filterStatus;
     return matchesSearch && matchesStatus;
   });
 
-  const handleStatusChange = (orderId: string, newStatus: OrderStatus) => {
-    updateOrderStatus(orderId, newStatus);
+  const handleStatusChange = async (orderId: string, newStatus: OrderStatus) => {
+    await updateOrderStatus(orderId, newStatus);
     if (selectedOrder && selectedOrder.id === orderId) {
       setSelectedOrder((prev) => (prev ? { ...prev, status: newStatus } : null));
     }
@@ -126,53 +127,70 @@ export const AdminOrders: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {filteredOrders.map((order) => (
-                <tr key={order.id} className="hover:bg-slate-50/80 transition-colors">
-                  <td className="p-3.5 font-mono font-bold text-slate-900">{order.orderNumber}</td>
-
-                  <td className="p-3.5">
-                    <div className="font-bold text-slate-900">{order.customer.name}</div>
-                    <div className="text-[10px] text-slate-400">
-                      {order.customer.phone} • {order.customer.city}
-                    </div>
-                  </td>
-
-                  <td className="p-3.5 text-slate-500">{formatDate(order.createdAt)}</td>
-
-                  <td className="p-3.5 font-semibold text-slate-700">
-                    {order.items.reduce((sum, item) => sum + item.quantity, 0)} items
-                  </td>
-
-                  <td className="p-3.5 font-black text-slate-900">
-                    {formatPrice(order.total, currency, settings.usdRate)}
-                  </td>
-
-                  {/* Status Dropdown to quickly update fulfillment */}
-                  <td className="p-3.5">
-                    <select
-                      value={order.status}
-                      onChange={(e) => handleStatusChange(order.id, e.target.value as OrderStatus)}
-                      className="text-xs font-bold py-1.5 px-2.5 rounded-xl border border-slate-200 bg-white outline-none cursor-pointer focus:ring-2 focus:ring-emerald-500/20"
-                    >
-                      {statusOptions.map((st) => (
-                        <option key={st.value} value={st.value}>
-                          {language === 'ur' ? st.labelUr : st.labelEn}
-                        </option>
-                      ))}
-                    </select>
-                  </td>
-
-                  <td className="p-3.5 text-right">
-                    <button
-                      onClick={() => setSelectedOrder(order)}
-                      className="p-1.5 bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 text-slate-700 rounded-xl font-bold inline-flex items-center gap-1 cursor-pointer transition-colors"
-                    >
-                      <Eye className="w-3.5 h-3.5" />
-                      <span className="hidden sm:inline">Details</span>
-                    </button>
+              {filteredOrders.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="text-center py-10 text-slate-400 font-bold">
+                    {language === 'ur' ? 'کوئی آرڈر نہیں ملا' : 'No matching orders found.'}
                   </td>
                 </tr>
-              ))}
+              ) : (
+                filteredOrders.map((order) => {
+                  const custName = order.customerName || order.customer?.name || 'Guest';
+                  const custPhone = order.customerPhone || order.customer?.phone || 'N/A';
+                  const custCity = order.customerCity || order.customer?.city || 'Pakistan';
+                  const totalAmt = order.totalAmount || order.total || 0;
+                  const totalItemsCount = order.items?.reduce((sum, item) => sum + item.quantity, 0) || 0;
+
+                  return (
+                    <tr key={order.id} className="hover:bg-slate-50/80 transition-colors">
+                      <td className="p-3.5 font-mono font-bold text-slate-900">
+                        {order.orderNumber || `#${order.id.substring(0, 8)}`}
+                      </td>
+
+                      <td className="p-3.5">
+                        <div className="font-bold text-slate-900">{custName}</div>
+                        <div className="text-[10px] text-slate-400">
+                          {custPhone} • {custCity}
+                        </div>
+                      </td>
+
+                      <td className="p-3.5 text-slate-500">{formatDate(order.createdAt || Date.now())}</td>
+
+                      <td className="p-3.5 font-semibold text-slate-700">
+                        {totalItemsCount} items
+                      </td>
+
+                      <td className="p-3.5 font-black text-slate-900">
+                        {formatPrice(totalAmt, currency, settings?.usdRate)}
+                      </td>
+
+                      <td className="p-3.5">
+                        <select
+                          value={order.status || 'pending'}
+                          onChange={(e) => handleStatusChange(order.id, e.target.value as OrderStatus)}
+                          className="text-xs font-bold py-1.5 px-2.5 rounded-xl border border-slate-200 bg-white outline-none cursor-pointer focus:ring-2 focus:ring-emerald-500/20"
+                        >
+                          {statusOptions.map((st) => (
+                            <option key={st.value} value={st.value}>
+                              {language === 'ur' ? st.labelUr : st.labelEn}
+                            </option>
+                          ))}
+                        </select>
+                      </td>
+
+                      <td className="p-3.5 text-right">
+                        <button
+                          onClick={() => setSelectedOrder(order)}
+                          className="p-1.5 bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 text-slate-700 rounded-xl font-bold inline-flex items-center gap-1 cursor-pointer transition-colors"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                          <span className="hidden sm:inline">Details</span>
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
             </tbody>
           </table>
         </div>
@@ -189,9 +207,9 @@ export const AdminOrders: React.FC = () => {
                 </div>
                 <div>
                   <h3 className="text-base sm:text-lg font-black text-slate-900">
-                    Order {selectedOrder.orderNumber}
+                    Order {selectedOrder.orderNumber || `#${selectedOrder.id.substring(0, 8)}`}
                   </h3>
-                  <p className="text-xs text-slate-400">Placed on {formatDate(selectedOrder.createdAt)}</p>
+                  <p className="text-xs text-slate-400">Placed on {formatDate(selectedOrder.createdAt || Date.now())}</p>
                 </div>
               </div>
 
@@ -219,14 +237,14 @@ export const AdminOrders: React.FC = () => {
                   Customer Information
                 </h4>
                 <div className="space-y-1 text-slate-600">
-                  <p className="font-bold text-slate-900">{selectedOrder.customer.name}</p>
+                  <p className="font-bold text-slate-900">{selectedOrder.customerName || selectedOrder.customer?.name || 'Guest'}</p>
                   <p className="flex items-center gap-1.5">
                     <Phone className="w-3.5 h-3.5 text-emerald-600" />
-                    <span>{selectedOrder.customer.phone}</span>
+                    <span>{selectedOrder.customerPhone || selectedOrder.customer?.phone || 'N/A'}</span>
                   </p>
                   <p className="flex items-center gap-1.5">
                     <Mail className="w-3.5 h-3.5 text-emerald-600" />
-                    <span>{selectedOrder.customer.email}</span>
+                    <span>{selectedOrder.customerEmail || selectedOrder.customer?.email || 'N/A'}</span>
                   </p>
                 </div>
               </div>
@@ -239,13 +257,13 @@ export const AdminOrders: React.FC = () => {
                   <p className="flex items-start gap-1.5">
                     <MapPin className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
                     <span>
-                      {selectedOrder.customer.address}, {selectedOrder.customer.city}
+                      {selectedOrder.shippingAddress || selectedOrder.customer?.address || 'Standard Delivery'}, {selectedOrder.customerCity || selectedOrder.customer?.city || 'Pakistan'}
                     </span>
                   </p>
                   <p className="pt-1">
                     <span className="font-bold text-slate-800">Method: </span>
-                    <span className="uppercase font-semibold">{selectedOrder.paymentMethod}</span> (
-                    {selectedOrder.paymentStatus})
+                    <span className="uppercase font-semibold">{selectedOrder.paymentMethod || 'COD'}</span> (
+                    {selectedOrder.paymentStatus || 'Pending'})
                   </p>
                 </div>
               </div>
@@ -254,24 +272,30 @@ export const AdminOrders: React.FC = () => {
             {/* Order Items */}
             <div className="space-y-3">
               <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
-                Purchased Items ({selectedOrder.items.length})
+                Purchased Items ({selectedOrder.items?.length || 0})
               </h4>
-              <div className="divide-y divide-slate-100 border border-slate-200 rounded-2xl p-3">
-                {selectedOrder.items.map((item, i) => (
+              <div className="divide-y divide-slate-100 border border-slate-200 rounded-2xl p-3 max-h-48 overflow-y-auto">
+                {selectedOrder.items?.map((item, i) => (
                   <div key={i} className="py-2 flex items-center justify-between text-xs">
                     <div className="flex items-center gap-3">
-                      <img
-                        src={item.product.images[0]}
-                        alt={item.product.title}
-                        className="w-10 h-10 rounded-lg object-cover border border-slate-200"
-                      />
+                      {item.product?.images?.[0] ? (
+                        <img
+                          src={item.product.images[0]}
+                          alt={item.product.title}
+                          className="w-10 h-10 rounded-lg object-cover border border-slate-200"
+                        />
+                      ) : (
+                        <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center font-bold text-slate-400">
+                          #
+                        </div>
+                      )}
                       <div>
-                        <p className="font-bold text-slate-900">{item.product.title}</p>
+                        <p className="font-bold text-slate-900">{item.product?.title || 'Product'}</p>
                         <p className="text-[11px] text-slate-500">Qty: {item.quantity}</p>
                       </div>
                     </div>
                     <div className="font-black text-slate-900">
-                      {formatPrice(item.product.price * item.quantity, currency, settings.usdRate)}
+                      {formatPrice((item.product?.price || 0) * item.quantity, currency, settings?.usdRate)}
                     </div>
                   </div>
                 ))}
@@ -282,22 +306,22 @@ export const AdminOrders: React.FC = () => {
             <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-1.5 text-xs">
               <div className="flex justify-between text-slate-600">
                 <span>Subtotal:</span>
-                <span>{formatPrice(selectedOrder.subtotal, currency, settings.usdRate)}</span>
+                <span>{formatPrice(selectedOrder.subtotal || selectedOrder.totalAmount || selectedOrder.total || 0, currency, settings?.usdRate)}</span>
               </div>
-              {selectedOrder.discount > 0 && (
+              {(selectedOrder.discount || 0) > 0 && (
                 <div className="flex justify-between text-emerald-600 font-semibold">
                   <span>Discount:</span>
-                  <span>-{formatPrice(selectedOrder.discount, currency, settings.usdRate)}</span>
+                  <span>-{formatPrice(selectedOrder.discount || 0, currency, settings?.usdRate)}</span>
                 </div>
               )}
               <div className="flex justify-between text-slate-600">
                 <span>Delivery:</span>
-                <span>{formatPrice(selectedOrder.deliveryCharges, currency, settings.usdRate)}</span>
+                <span>{formatPrice(selectedOrder.deliveryCharges || 0, currency, settings?.usdRate)}</span>
               </div>
               <div className="flex justify-between font-black text-slate-900 text-sm pt-2 border-t border-slate-200">
                 <span>Total Amount:</span>
                 <span className="text-emerald-700">
-                  {formatPrice(selectedOrder.total, currency, settings.usdRate)}
+                  {formatPrice(selectedOrder.totalAmount || selectedOrder.total || 0, currency, settings?.usdRate)}
                 </span>
               </div>
             </div>
