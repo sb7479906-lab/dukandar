@@ -9,9 +9,7 @@ import {
   MapPin,
   Phone,
   Printer,
-  ChevronRight,
   AlertCircle,
-  ShieldCheck,
 } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 import { Order, OrderStatus } from '../types';
@@ -21,7 +19,7 @@ export const OrderTrackingModal: React.FC = () => {
   const {
     isTrackingOpen,
     setIsTrackingOpen,
-    orders,
+    orders = [],
     currentTrackingOrder,
     setCurrentTrackingOrder,
     trackOrderByNumber,
@@ -44,7 +42,7 @@ export const OrderTrackingModal: React.FC = () => {
     e.preventDefault();
     if (!searchQuery.trim()) return;
 
-    const found = trackOrderByNumber(searchQuery);
+    const found = trackOrderByNumber(searchQuery.trim());
     if (found) {
       setCurrentTrackingOrder(found);
       setErrorMessage('');
@@ -198,77 +196,84 @@ export const OrderTrackingModal: React.FC = () => {
               </div>
 
               {/* Step Progress Timeline */}
-              <div className="p-6 bg-slate-50 rounded-3xl border border-slate-200/80 space-y-6">
-                <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">
-                  {t('orderTimeline')}
-                </h3>
+              {activeOrder.trackingHistory && activeOrder.trackingHistory.length > 0 && (
+                <div className="p-6 bg-slate-50 rounded-3xl border border-slate-200/80 space-y-6">
+                  <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">
+                    {t('orderTimeline')}
+                  </h3>
 
-                <div className="relative pl-6 sm:pl-8 space-y-6 before:absolute before:left-3 sm:before:left-4 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-200">
-                  {activeOrder.trackingHistory.map((step, idx) => (
-                    <div key={idx} className="relative group">
-                      {/* Step Circle Pin */}
-                      <div
-                        className={`absolute -left-6 sm:-left-8 top-0.5 w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center ring-4 ring-white ${
-                          step.completed
-                            ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30'
-                            : 'bg-slate-200 text-slate-400'
-                        }`}
-                      >
-                        {step.completed ? (
-                          <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                        ) : (
-                          <Clock className="w-3.5 h-3.5" />
-                        )}
-                      </div>
-
-                      <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs space-y-1">
-                        <div className="flex flex-wrap items-center justify-between gap-1">
-                          <h4 className="text-xs sm:text-sm font-bold text-slate-900">
-                            {language === 'ur' ? step.titleUrdu : step.title}
-                          </h4>
-                          <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md">
-                            {step.timestamp}
-                          </span>
+                  <div className="relative pl-6 sm:pl-8 space-y-6 before:absolute before:left-3 sm:before:left-4 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-200">
+                    {activeOrder.trackingHistory.map((step, idx) => (
+                      <div key={idx} className="relative group">
+                        {/* Step Circle Pin */}
+                        <div
+                          className={`absolute -left-6 sm:-left-8 top-0.5 w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center ring-4 ring-white ${
+                            step.completed
+                              ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30'
+                              : 'bg-slate-200 text-slate-400'
+                          }`}
+                        >
+                          {step.completed ? (
+                            <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                          ) : (
+                            <Clock className="w-3.5 h-3.5" />
+                          )}
                         </div>
-                        <p className="text-xs text-slate-600 leading-relaxed">
-                          {language === 'ur' ? step.descriptionUrdu : step.description}
-                        </p>
+
+                        <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs space-y-1">
+                          <div className="flex flex-wrap items-center justify-between gap-1">
+                            <h4 className="text-xs sm:text-sm font-bold text-slate-900">
+                              {language === 'ur' ? (step.titleUrdu || step.title) : step.title}
+                            </h4>
+                            <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md">
+                              {step.timestamp}
+                            </span>
+                          </div>
+                          <p className="text-xs text-slate-600 leading-relaxed">
+                            {language === 'ur' ? (step.descriptionUrdu || step.description) : step.description}
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Items & Shipping Address Details */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Items Box */}
                 <div className="p-5 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
                   <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
-                    {t('itemsInOrder')} ({activeOrder.items.length})
+                    {t('itemsInOrder')} ({activeOrder.items?.length || 0})
                   </h4>
 
                   <div className="divide-y divide-slate-200/80 space-y-2">
-                    {activeOrder.items.map((item, i) => (
-                      <div key={i} className="pt-2 flex items-center gap-3">
-                        <img
-                          src={item.product.images[0]}
-                          alt={item.product.title}
-                          className="w-12 h-12 rounded-lg object-cover border border-slate-200 shrink-0"
-                        />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs font-bold text-slate-900 truncate">
-                            {language === 'ur' ? item.product.titleUrdu : item.product.title}
-                          </p>
-                          <p className="text-[11px] text-slate-500">
-                            Qty: {item.quantity}{' '}
-                            {item.selectedSize ? `• Size: ${item.selectedSize}` : ''}
-                          </p>
+                    {activeOrder.items?.map((item, i) => {
+                      const itemImg = item.product?.images?.[0] || 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800&auto=format&fit=crop&q=80';
+                      const itemTitle = language === 'ur' ? (item.product?.titleUrdu || item.product?.title) : item.product?.title;
+
+                      return (
+                        <div key={i} className="pt-2 flex items-center gap-3">
+                          <img
+                            src={itemImg}
+                            alt={itemTitle}
+                            className="w-12 h-12 rounded-lg object-cover border border-slate-200 shrink-0"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-bold text-slate-900 truncate">
+                              {itemTitle}
+                            </p>
+                            <p className="text-[11px] text-slate-500">
+                              Qty: {item.quantity}{' '}
+                              {item.selectedSize ? `• Size: ${item.selectedSize}` : ''}
+                            </p>
+                          </div>
+                          <div className="text-xs font-extrabold text-slate-900">
+                            {formatPrice((item.product?.price || 0) * item.quantity, currency, settings?.usdRate)}
+                          </div>
                         </div>
-                        <div className="text-xs font-extrabold text-slate-900">
-                          {formatPrice(item.product.price * item.quantity, currency, settings.usdRate)}
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
 
@@ -279,15 +284,15 @@ export const OrderTrackingModal: React.FC = () => {
                   </h4>
 
                   <div className="space-y-1.5 text-slate-600">
-                    <p className="font-bold text-slate-900">{activeOrder.customer.name}</p>
+                    <p className="font-bold text-slate-900">{activeOrder.customer?.name}</p>
                     <p className="flex items-center gap-1.5">
                       <Phone className="w-3.5 h-3.5 text-emerald-600" />
-                      <span>{activeOrder.customer.phone}</span>
+                      <span>{activeOrder.customer?.phone}</span>
                     </p>
                     <p className="flex items-start gap-1.5">
                       <MapPin className="w-3.5 h-3.5 text-emerald-600 mt-0.5" />
                       <span>
-                        {activeOrder.customer.address}, {activeOrder.customer.city}
+                        {activeOrder.customer?.address}, {activeOrder.customer?.city}
                       </span>
                     </p>
                   </div>
@@ -302,7 +307,7 @@ export const OrderTrackingModal: React.FC = () => {
                     <div className="flex justify-between font-extrabold text-slate-900 text-sm pt-1">
                       <span>{t('total')}:</span>
                       <span className="text-emerald-700">
-                        {formatPrice(activeOrder.total, currency, settings.usdRate)}
+                        {formatPrice(activeOrder.total, currency, settings?.usdRate)}
                       </span>
                     </div>
                   </div>
