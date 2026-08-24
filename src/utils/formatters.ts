@@ -45,8 +45,8 @@ export function generateWhatsAppOrderUrl(
   message += `\n📦 *Order Items:*\n`;
   items.forEach((item, index) => {
     message += `${index + 1}. ${item.product.title} (x${item.quantity}) - ₨ ${(item.product.price * item.quantity).toLocaleString('en-PK')}\n`;
-    if (item.selectedSize) message += `   ▫️ Size: ${item.selectedSize}\n`;
-    if (item.selectedColor) message += `   ▫️ Color: ${item.selectedColor.name}\n`;
+    if (item.selectedSize) message += `    ▫️ Size: ${item.selectedSize}\n`;
+    if (item.selectedColor) message += `    ▫️ Color: ${item.selectedColor.name}\n`;
   });
 
   message += `\n💰 *Total Payable:* ₨ ${total.toLocaleString('en-PK')}\n`;
