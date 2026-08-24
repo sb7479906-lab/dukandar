@@ -1,15 +1,12 @@
 import React from 'react';
 import {
   X,
-  User,
   Package,
   MapPin,
   Phone,
   Mail,
   LogOut,
   Truck,
-  ShieldCheck,
-  Calendar,
 } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 import { formatPrice, formatDate } from '../utils/formatters';
@@ -20,7 +17,7 @@ export const CustomerProfileModal: React.FC = () => {
     setIsProfileOpen,
     currentUser,
     logoutUser,
-    orders,
+    orders = [],
     currency,
     language,
     t,
@@ -33,8 +30,8 @@ export const CustomerProfileModal: React.FC = () => {
 
   const userOrders = orders.filter(
     (o) =>
-      o.customer.email.toLowerCase() === currentUser.email.toLowerCase() ||
-      o.customer.name.toLowerCase() === currentUser.name.toLowerCase()
+      (o.customer?.email && currentUser.email && o.customer.email.toLowerCase() === currentUser.email.toLowerCase()) ||
+      (o.customer?.name && currentUser.name && o.customer.name.toLowerCase() === currentUser.name.toLowerCase())
   );
 
   const handleTrackOrder = (order: any) => {
@@ -42,6 +39,8 @@ export const CustomerProfileModal: React.FC = () => {
     setIsProfileOpen(false);
     setIsTrackingOpen(true);
   };
+
+  const userAvatar = currentUser.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80';
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 animate-in fade-in duration-200">
@@ -53,7 +52,7 @@ export const CustomerProfileModal: React.FC = () => {
         <div className="p-5 sm:p-6 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <img
-              src={currentUser.avatar}
+              src={userAvatar}
               alt={currentUser.name}
               className="w-12 h-12 rounded-2xl object-cover ring-2 ring-emerald-500 shadow-sm"
             />
@@ -92,7 +91,7 @@ export const CustomerProfileModal: React.FC = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-slate-600">
               <div className="flex items-center gap-2">
                 <Phone className="w-3.5 h-3.5 text-emerald-600" />
-                <span>{currentUser.phone}</span>
+                <span>{currentUser.phone || 'N/A'}</span>
               </div>
               <div className="flex items-center gap-2">
                 <Mail className="w-3.5 h-3.5 text-emerald-600" />
@@ -101,7 +100,7 @@ export const CustomerProfileModal: React.FC = () => {
               <div className="flex items-center gap-2 sm:col-span-2">
                 <MapPin className="w-3.5 h-3.5 text-emerald-600" />
                 <span>
-                  {currentUser.address}, {currentUser.city}
+                  {currentUser.address || 'No default address saved'}, {currentUser.city || ''}
                 </span>
               </div>
             </div>
@@ -142,11 +141,11 @@ export const CustomerProfileModal: React.FC = () => {
                     <div className="flex items-center justify-between text-xs pt-1 border-t border-slate-200">
                       <div>
                         <span className="text-slate-500">Items: </span>
-                        <span className="font-bold text-slate-800">{ord.items.length} items</span>
+                        <span className="font-bold text-slate-800">{ord.items?.length || 0} items</span>
                       </div>
                       <div className="text-right">
                         <span className="font-black text-slate-900">
-                          {formatPrice(ord.total, currency, settings.usdRate)}
+                          {formatPrice(ord.total, currency, settings?.usdRate)}
                         </span>
                       </div>
                     </div>
