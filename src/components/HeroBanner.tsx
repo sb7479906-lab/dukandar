@@ -56,7 +56,7 @@ const banners = [
 ];
 
 export const HeroBanner: React.FC = () => {
-  const { language, t, setSelectedCategory, setIsSupportOpen } = useStore();
+  const { language, t, setSelectedCategory, setIsSupportOpen, settings } = useStore();
   const [currentSlide, setCurrentSlide] = useState(0);
 
   useEffect(() => {
@@ -67,6 +67,7 @@ export const HeroBanner: React.FC = () => {
   }, []);
 
   const slide = banners[currentSlide];
+  const freeThreshold = settings?.freeDeliveryThreshold || 3000;
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-6">
@@ -182,7 +183,7 @@ export const HeroBanner: React.FC = () => {
               {language === 'ur' ? 'فری ہوم ڈلیوری' : 'Free Delivery'}
             </h4>
             <p className="text-[11px] text-slate-500">
-              {language === 'ur' ? '4000 روپے سے زائد پر' : 'On orders over ₨ 4,000'}
+              {language === 'ur' ? `${freeThreshold} روپے سے زائد پر` : `On orders over ₨ ${freeThreshold.toLocaleString()}`}
             </p>
           </div>
         </div>
