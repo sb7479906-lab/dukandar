@@ -456,13 +456,17 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     await setDoc(doc(db, 'orders', id), newOrder);
     setLastPlacedOrder(newOrder);
 
-    // Update Product Stock Levels in Firestore
+    // Update Product Stock Levels safely in Firestore
     for (const item of orderData.items) {
       const prod = products.find((p) => p.id === item.product.id);
       if (prod) {
-        await updateDoc(doc(db, 'products', prod.id), {
-          stock: Math.max(0, prod.stock - item.quantity),
-        });
+        try {
+          await updateDoc(doc(db, 'products', prod.id), {
+            stock: Math.max(0, prod.stock - item.quantity),
+          });
+        } catch (err) {
+          console.warn(`Failed to update stock for product ${prod.id}:`, err);
+        }
       }
     }
 
