@@ -7,9 +7,6 @@ import {
   X,
   Search,
   Package,
-  Sparkles,
-  AlertTriangle,
-  Image,
 } from 'lucide-react';
 import { useStore } from '../../context/StoreContext';
 import { Product } from '../../types';
@@ -59,9 +56,11 @@ export const AdminProducts: React.FC = () => {
   const [tags, setTags] = useState('New, Trendy, Premium');
 
   const filteredProducts = products.filter((p) => {
+    const titleEn = p.title || '';
+    const titleUr = p.titleUrdu || '';
     const matchesSearch =
-      p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.titleUrdu.includes(searchQuery);
+      titleEn.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      titleUr.includes(searchQuery);
     const matchesCat = filterCat === 'all' || p.category === filterCat;
     return matchesSearch && matchesCat;
   });
@@ -72,22 +71,22 @@ export const AdminProducts: React.FC = () => {
     setEditStock(prod.stock);
   };
 
-  const handleSaveEdit = (prodId: string) => {
-    updateProduct(prodId, {
-      price: editPrice,
-      stock: editStock,
+  const handleSaveEdit = async (prodId: string) => {
+    await updateProduct(prodId, {
+      price: Number(editPrice),
+      stock: Number(editStock),
     });
     setEditingId(null);
   };
 
-  const handleAddSubmit = (e: React.FormEvent) => {
+  const handleAddSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim() || !imageUrl.trim()) return;
 
     const discount = originalPrice > price ? Math.round(((originalPrice - price) / originalPrice) * 100) : 0;
     const catObj = categories.find((c) => c.id === category);
 
-    addProduct({
+    await addProduct({
       title: title.trim(),
       titleUrdu: titleUrdu.trim() || title.trim(),
       description: description.trim() || title.trim(),
@@ -178,125 +177,134 @@ export const AdminProducts: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {filteredProducts.map((prod) => {
-                const isEditing = editingId === prod.id;
-                const isLow = prod.stock > 0 && prod.stock <= 5;
-                const isOut = prod.stock <= 0;
+              {filteredProducts.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="text-center py-10 text-slate-400 font-bold">
+                    {language === 'ur' ? 'کوئی پروڈکٹ نہیں ملی' : 'No products found.'}
+                  </td>
+                </tr>
+              ) : (
+                filteredProducts.map((prod) => {
+                  const isEditing = editingId === prod.id;
+                  const isLow = prod.stock > 0 && prod.stock <= 5;
+                  const isOut = prod.stock <= 0;
+                  const prodImg = prod.images?.[0] || sampleImages[0].url;
 
-                return (
-                  <tr key={prod.id} className="hover:bg-slate-50/80 transition-colors">
-                    <td className="p-3.5 flex items-center gap-3 min-w-[200px]">
-                      <img
-                        src={prod.images[0]}
-                        alt={prod.title}
-                        className="w-12 h-12 rounded-xl object-cover border border-slate-200 shrink-0"
-                      />
-                      <div>
-                        <div className="font-bold text-slate-900 line-clamp-1">
-                          {language === 'ur' ? prod.titleUrdu : prod.title}
+                  return (
+                    <tr key={prod.id} className="hover:bg-slate-50/80 transition-colors">
+                      <td className="p-3.5 flex items-center gap-3 min-w-[200px]">
+                        <img
+                          src={prodImg}
+                          alt={prod.title}
+                          className="w-12 h-12 rounded-xl object-cover border border-slate-200 shrink-0"
+                        />
+                        <div>
+                          <div className="font-bold text-slate-900 line-clamp-1">
+                            {language === 'ur' ? (prod.titleUrdu || prod.title) : prod.title}
+                          </div>
+                          <div className="text-[10px] text-slate-400">ID: {prod.id.substring(0, 8)}</div>
                         </div>
-                        <div className="text-[10px] text-slate-400">ID: {prod.id}</div>
-                      </div>
-                    </td>
+                      </td>
 
-                    <td className="p-3.5 text-slate-600 font-medium">
-                      {language === 'ur' ? prod.categoryUrdu : prod.category}
-                    </td>
+                      <td className="p-3.5 text-slate-600 font-medium capitalize">
+                        {language === 'ur' ? (prod.categoryUrdu || prod.category) : prod.category}
+                      </td>
 
-                    {/* Price with In-place Edit */}
-                    <td className="p-3.5">
-                      {isEditing ? (
-                        <div className="flex items-center gap-1">
-                          <span className="text-slate-400">₨</span>
+                      {/* Price with In-place Edit */}
+                      <td className="p-3.5">
+                        {isEditing ? (
+                          <div className="flex items-center gap-1">
+                            <span className="text-slate-400">₨</span>
+                            <input
+                              type="number"
+                              value={editPrice}
+                              onChange={(e) => setEditPrice(Number(e.target.value))}
+                              className="w-24 p-1 text-xs font-bold border border-emerald-500 rounded bg-emerald-50"
+                            />
+                          </div>
+                        ) : (
+                          <div className="font-extrabold text-slate-900">
+                            {formatPrice(prod.price, currency, settings?.usdRate)}
+                          </div>
+                        )}
+                      </td>
+
+                      {/* Stock with In-place Edit */}
+                      <td className="p-3.5">
+                        {isEditing ? (
                           <input
                             type="number"
-                            value={editPrice}
-                            onChange={(e) => setEditPrice(Number(e.target.value))}
-                            className="w-24 p-1 text-xs font-bold border border-emerald-500 rounded bg-emerald-50"
+                            value={editStock}
+                            onChange={(e) => setEditStock(Number(e.target.value))}
+                            className="w-16 p-1 text-xs font-bold border border-emerald-500 rounded bg-emerald-50"
                           />
-                        </div>
-                      ) : (
-                        <div className="font-extrabold text-slate-900">
-                          {formatPrice(prod.price, currency, settings.usdRate)}
-                        </div>
-                      )}
-                    </td>
+                        ) : (
+                          <span
+                            className={`px-2 py-0.5 rounded-md font-bold text-[11px] ${
+                              isOut
+                                ? 'bg-rose-100 text-rose-800'
+                                : isLow
+                                ? 'bg-amber-100 text-amber-800'
+                                : 'bg-emerald-100 text-emerald-800'
+                            }`}
+                          >
+                            {prod.stock} units
+                          </span>
+                        )}
+                      </td>
 
-                    {/* Stock with In-place Edit */}
-                    <td className="p-3.5">
-                      {isEditing ? (
-                        <input
-                          type="number"
-                          value={editStock}
-                          onChange={(e) => setEditStock(Number(e.target.value))}
-                          className="w-16 p-1 text-xs font-bold border border-emerald-500 rounded bg-emerald-50"
-                        />
-                      ) : (
-                        <span
-                          className={`px-2 py-0.5 rounded-md font-bold text-[11px] ${
-                            isOut
-                              ? 'bg-rose-100 text-rose-800'
-                              : isLow
-                              ? 'bg-amber-100 text-amber-800'
-                              : 'bg-emerald-100 text-emerald-800'
-                          }`}
-                        >
-                          {prod.stock} units
-                        </span>
-                      )}
-                    </td>
+                      <td className="p-3.5">
+                        {(prod.discountPercent || 0) > 0 ? (
+                          <span className="text-rose-600 font-bold bg-rose-50 px-2 py-0.5 rounded-full text-[10px]">
+                            -{prod.discountPercent}%
+                          </span>
+                        ) : (
+                          <span className="text-slate-400">-</span>
+                        )}
+                      </td>
 
-                    <td className="p-3.5">
-                      {prod.discountPercent > 0 ? (
-                        <span className="text-rose-600 font-bold bg-rose-50 px-2 py-0.5 rounded-full text-[10px]">
-                          -{prod.discountPercent}%
-                        </span>
-                      ) : (
-                        <span className="text-slate-400">-</span>
-                      )}
-                    </td>
-
-                    {/* Actions */}
-                    <td className="p-3.5 text-right">
-                      {isEditing ? (
-                        <div className="flex items-center justify-end gap-1.5">
-                          <button
-                            onClick={() => handleSaveEdit(prod.id)}
-                            className="p-1.5 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 cursor-pointer"
-                            title="Save"
-                          >
-                            <Check className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => setEditingId(null)}
-                            className="p-1.5 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 cursor-pointer"
-                            title="Cancel"
-                          >
-                            <X className="w-4 h-4" />
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="flex items-center justify-end gap-1.5">
-                          <button
-                            onClick={() => handleStartEdit(prod)}
-                            className="p-1.5 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors cursor-pointer"
-                            title={t('editProduct')}
-                          >
-                            <Edit2 className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => deleteProduct(prod.id)}
-                            className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
-                            title={t('deleteProduct')}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
+                      {/* Actions */}
+                      <td className="p-3.5 text-right">
+                        {isEditing ? (
+                          <div className="flex items-center justify-end gap-1.5">
+                            <button
+                              onClick={() => handleSaveEdit(prod.id)}
+                              className="p-1.5 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 cursor-pointer"
+                              title="Save"
+                            >
+                              <Check className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => setEditingId(null)}
+                              className="p-1.5 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 cursor-pointer"
+                              title="Cancel"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center justify-end gap-1.5">
+                            <button
+                              onClick={() => handleStartEdit(prod)}
+                              className="p-1.5 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors cursor-pointer"
+                              title={t('editProduct')}
+                            >
+                              <Edit2 className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => deleteProduct(prod.id)}
+                              className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                              title={t('deleteProduct')}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
             </tbody>
           </table>
         </div>
