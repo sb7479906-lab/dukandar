@@ -1,26 +1,26 @@
 import React, { useState } from 'react';
-import { Settings, Save, CheckCircle2, MessageCircle, Truck, Phone, Store } from 'lucide-react';
+import { Save, CheckCircle2, MessageCircle, Truck, Store } from 'lucide-react';
 import { useStore } from '../../context/StoreContext';
 
 export const AdminSettings: React.FC = () => {
   const { settings, updateSettings, language, t } = useStore();
 
-  const [storeName, setStoreName] = useState(settings.storeName);
-  const [storeNameUrdu, setStoreNameUrdu] = useState(settings.storeNameUrdu);
-  const [whatsappNumber, setWhatsappNumber] = useState(settings.whatsappNumber);
-  const [phone, setPhone] = useState(settings.phone);
-  const [email, setEmail] = useState(settings.email);
-  const [standardDeliveryFee, setStandardDeliveryFee] = useState(settings.standardDeliveryFee);
-  const [expressDeliveryFee, setExpressDeliveryFee] = useState(settings.expressDeliveryFee);
-  const [freeDeliveryThreshold, setFreeDeliveryThreshold] = useState(settings.freeDeliveryThreshold);
-  const [announcementEn, setAnnouncementEn] = useState(settings.announcementEn);
-  const [announcementUr, setAnnouncementUr] = useState(settings.announcementUr);
+  const [storeName, setStoreName] = useState(settings?.storeName || 'Dukandar Store');
+  const [storeNameUrdu, setStoreNameUrdu] = useState(settings?.storeNameUrdu || 'دکان دار سٹور');
+  const [whatsappNumber, setWhatsappNumber] = useState(settings?.whatsappNumber || '923001234567');
+  const [phone, setPhone] = useState(settings?.phone || '0300-1234567');
+  const [email, setEmail] = useState(settings?.email || 'support@dukandar.pk');
+  const [standardDeliveryFee, setStandardDeliveryFee] = useState(settings?.standardDeliveryFee || 200);
+  const [expressDeliveryFee, setExpressDeliveryFee] = useState(settings?.expressDeliveryFee || 450);
+  const [freeDeliveryThreshold, setFreeDeliveryThreshold] = useState(settings?.freeDeliveryThreshold || 3000);
+  const [announcementEn, setAnnouncementEn] = useState(settings?.announcementEn || 'Free Express Shipping Across Pakistan on Orders Above Rs. 3,000!');
+  const [announcementUr, setAnnouncementUr] = useState(settings?.announcementUr || 'تمام آرڈرز پر 3,000 روپے سے زائد پر مفت ڈلیوری دستیاب ہے!');
 
   const [savedSuccess, setSavedSuccess] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    updateSettings({
+    await updateSettings({
       storeName,
       storeNameUrdu,
       whatsappNumber,
