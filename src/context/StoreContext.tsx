@@ -32,16 +32,36 @@ import {
   UserProfile,
   Review,
 } from '../types';
-import {
-  initialCategories,
-  initialProducts,
-  initialOrders,
-  initialCustomers,
-  initialCoupons,
-  initialNotifications,
-  defaultSettings,
-} from '../data/mockData';
 import { getTranslation } from '../utils/translations';
+
+// Initial Categories Template (Real Store Structure)
+const realCategories: Category[] = [
+  { id: 'electronics', name: 'Electronics', nameUrdu: 'الیکٹرانکس', icon: 'Cpu', image: '', itemCount: 0 },
+  { id: 'fashion', name: 'Fashion & Apparel', nameUrdu: 'فیشن و ملبوسات', icon: 'Shirt', image: '', itemCount: 0 },
+  { id: 'footwear', name: 'Footwear', nameUrdu: 'جوتے', icon: 'Footprints', image: '', itemCount: 0 },
+  { id: 'beauty', name: 'Beauty & Health', nameUrdu: 'بیوٹی و صحت', icon: 'Sparkles', image: '', itemCount: 0 },
+  { id: 'home', name: 'Home & Kitchen', nameUrdu: 'گھریلو سامان', icon: 'Home', image: '', itemCount: 0 },
+];
+
+// Production Default Store Settings
+const productionSettings: StoreSettings = {
+  storeName: 'Dukandar',
+  storeNameUrdu: 'دکان دار',
+  tagline: 'Online Shopping Marketplace',
+  taglineUrdu: 'آن لائن شاپنگ کا مرکز',
+  phone: '+92 300 8899776',
+  whatsappNumber: '923008899776',
+  email: 'support@dukandar.pk',
+  address: 'Commercial Area, Phase 5 DHA',
+  city: 'Lahore',
+  standardDeliveryFee: 250,
+  expressDeliveryFee: 500,
+  freeDeliveryThreshold: 4000,
+  announcementText: '🎉 Welcome to Dukandar! Enjoy Cash on Delivery across Pakistan.',
+  announcementTextUrdu: '🎉 دکان دار پر خوش آمدید! پاکستان بھر میں کیش آن ڈلیوری دستیاب ہے۔',
+  showAnnouncement: true,
+  usdRate: 278,
+};
 
 interface StoreContextType {
   language: Language;
@@ -155,7 +175,7 @@ const StoreContext = createContext<StoreContextType | undefined>(undefined);
 export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
-  // App Settings
+  // Language & App Mode
   const [language, setLanguageState] = useState<Language>(
     () => (localStorage.getItem('dukandar_lang') as Language) || 'en'
   );
@@ -165,21 +185,22 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [activeView, setActiveView] = useState<'shop' | 'admin'>('shop');
   const [adminTab, setAdminTab] = useState<AdminTab>('dashboard');
 
-  // Realtime Collections State
-  const [categories] = useState<Category[]>(initialCategories);
+  // Realtime Collections (100% Real Database Data)
+  const [categories] = useState<Category[]>(realCategories);
   const [products, setProducts] = useState<Product[]>([]);
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [notifications, setNotifications] = useState<StoreNotification[]>([]);
-  const [settings, setSettings] = useState<StoreSettings>(defaultSettings);
+  const [settings, setSettings] = useState<StoreSettings>(productionSettings);
 
-  // Filters & Cart State
+  // Filters & State
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [sortBy, setSortBy] = useState<string>('featured');
-  const [priceRange, setPriceRange] = useState<[number, number]>([0, 500000]);
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000000]);
 
+  // Cart & Wishlist
   const [cart, setCart] = useState<CartItem[]>(() => {
     const saved = localStorage.getItem('dukandar_cart');
     return saved ? JSON.parse(saved) : [];
@@ -206,50 +227,45 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [activeProductModal, setActiveProductModal] = useState<Product | null>(null);
 
-  // Automatic Database Initializer & Seed
-  const seedFirestore = async () => {
+  // Initial Settings Sync
+  const initSettings = async () => {
     try {
-      const prodSnap = await getDocs(collection(db, 'products'));
-      if (prodSnap.empty) {
-        for (const p of initialProducts) await setDoc(doc(db, 'products', p.id), p);
-        for (const c of initialCoupons) await setDoc(doc(db, 'coupons', c.id), c);
-        for (const o of initialOrders) await setDoc(doc(db, 'orders', o.id), o);
-        for (const cust of initialCustomers) await setDoc(doc(db, 'customers', cust.id), cust);
-        for (const n of initialNotifications) await setDoc(doc(db, 'notifications', n.id), n);
-        await setDoc(doc(db, 'settings', 'store_config'), defaultSettings);
+      const docSnap = await getDocs(collection(db, 'settings'));
+      if (docSnap.empty) {
+        await setDoc(doc(db, 'settings', 'store_config'), productionSettings);
       }
     } catch (err) {
-      console.warn("Firestore seed notice:", err);
+      console.warn('Config init notice:', err);
     }
   };
 
-  // Realtime Database Event Listeners
+  // Realtime Subscriptions
   useEffect(() => {
-    seedFirestore();
+    initSettings();
 
     const unsubProducts = onSnapshot(collection(db, 'products'), (snapshot) => {
       const data = snapshot.docs.map((d) => ({ id: d.id, ...d.data() })) as Product[];
-      setProducts(data.length > 0 ? data : initialProducts);
+      setProducts(data);
     });
 
     const unsubCoupons = onSnapshot(collection(db, 'coupons'), (snapshot) => {
       const data = snapshot.docs.map((d) => ({ id: d.id, ...d.data() })) as Coupon[];
-      setCoupons(data.length > 0 ? data : initialCoupons);
+      setCoupons(data);
     });
 
     const unsubOrders = onSnapshot(collection(db, 'orders'), (snapshot) => {
       const data = snapshot.docs.map((d) => ({ id: d.id, ...d.data() })) as Order[];
-      setOrders(data.length > 0 ? data : initialOrders);
+      setOrders(data);
     });
 
     const unsubCustomers = onSnapshot(collection(db, 'customers'), (snapshot) => {
       const data = snapshot.docs.map((d) => ({ id: d.id, ...d.data() })) as Customer[];
-      setCustomers(data.length > 0 ? data : initialCustomers);
+      setCustomers(data);
     });
 
     const unsubNotifications = onSnapshot(collection(db, 'notifications'), (snapshot) => {
       const data = snapshot.docs.map((d) => ({ id: d.id, ...d.data() })) as StoreNotification[];
-      setNotifications(data.length > 0 ? data : initialNotifications);
+      setNotifications(data);
     });
 
     const unsubSettings = onSnapshot(doc(db, 'settings', 'store_config'), (docSnap) => {
@@ -262,9 +278,9 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           id: user.uid,
           name: user.displayName || user.email?.split('@')[0] || 'User',
           email: user.email || '',
-          phone: '+92 300 1234567',
-          address: 'Commercial Area, Phase 5 DHA',
-          city: 'Lahore',
+          phone: '',
+          address: '',
+          city: '',
           role: user.email?.includes('admin') ? 'admin' : 'customer',
           avatar: user.photoURL || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
         });
@@ -531,7 +547,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   // Realtime Products Operations
   const addProduct = async (productData: Omit<Product, 'id' | 'rating' | 'reviewCount'>) => {
     const id = `prod-${Date.now()}`;
-    const newProduct: Product = { ...productData, id, rating: 5.0, reviewCount: 1, reviews: [] };
+    const newProduct: Product = { ...productData, id, rating: 5.0, reviewCount: 0, reviews: [] };
     await setDoc(doc(db, 'products', id), newProduct);
   };
 
