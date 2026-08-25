@@ -120,9 +120,9 @@ interface StoreContextType {
 
   notifications: StoreNotification[];
   unreadNotificationCount: number;
-  markNotificationAsRead: (id: string) => void;
-  markAllNotificationsAsRead: () => void;
-  addNotification: (notif: Omit<StoreNotification, 'id' | 'timestamp' | 'read'>) => void;
+  markNotificationAsRead: (id: string) => Promise<void>;
+  markAllNotificationsAsRead: () => Promise<void>;
+  addNotification: (notif: Omit<StoreNotification, 'id' | 'timestamp' | 'read'>) => Promise<void>;
 
   settings: StoreSettings;
   updateSettings: (newSettings: Partial<StoreSettings>) => Promise<void>;
@@ -155,7 +155,7 @@ const StoreContext = createContext<StoreContextType | undefined>(undefined);
 export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
-  // Localization
+  // App Settings
   const [language, setLanguageState] = useState<Language>(
     () => (localStorage.getItem('dukandar_lang') as Language) || 'en'
   );
@@ -165,21 +165,21 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [activeView, setActiveView] = useState<'shop' | 'admin'>('shop');
   const [adminTab, setAdminTab] = useState<AdminTab>('dashboard');
 
-  // Firestore Realtime Collections State
+  // Realtime Collections State
   const [categories] = useState<Category[]>(initialCategories);
   const [products, setProducts] = useState<Product[]>([]);
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
+  const [notifications, setNotifications] = useState<StoreNotification[]>([]);
   const [settings, setSettings] = useState<StoreSettings>(defaultSettings);
 
-  // Filters & Controls
+  // Filters & Cart State
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [sortBy, setSortBy] = useState<string>('featured');
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 500000]);
 
-  // Cart & Wishlist Local Storage State
   const [cart, setCart] = useState<CartItem[]>(() => {
     const saved = localStorage.getItem('dukandar_cart');
     return saved ? JSON.parse(saved) : [];
@@ -190,13 +190,12 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   });
   const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
 
-  // User Auth & UI State
+  // Auth & Tracking State
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
-  const [notifications, setNotifications] = useState<StoreNotification[]>(initialNotifications);
   const [currentTrackingOrder, setCurrentTrackingOrder] = useState<Order | null>(null);
   const [lastPlacedOrder, setLastPlacedOrder] = useState<Order | null>(null);
 
-  // Drawers & Modals
+  // Modals & Drawers
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isWishlistOpen, setIsWishlistOpen] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
@@ -207,7 +206,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [activeProductModal, setActiveProductModal] = useState<Product | null>(null);
 
-  // --- Seed Database Function ---
+  // Automatic Database Initializer & Seed
   const seedFirestore = async () => {
     try {
       const prodSnap = await getDocs(collection(db, 'products'));
@@ -216,62 +215,47 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         for (const c of initialCoupons) await setDoc(doc(db, 'coupons', c.id), c);
         for (const o of initialOrders) await setDoc(doc(db, 'orders', o.id), o);
         for (const cust of initialCustomers) await setDoc(doc(db, 'customers', cust.id), cust);
+        for (const n of initialNotifications) await setDoc(doc(db, 'notifications', n.id), n);
         await setDoc(doc(db, 'settings', 'store_config'), defaultSettings);
       }
     } catch (err) {
-      console.warn("Firestore Seed notice / fallback mode active:", err);
+      console.warn("Firestore seed notice:", err);
     }
   };
 
-  // --- Realtime Firestore Subscriptions ---
+  // Realtime Database Event Listeners
   useEffect(() => {
     seedFirestore();
 
-    const unsubProducts = onSnapshot(
-      collection(db, 'products'),
-      (snapshot) => {
-        const data = snapshot.docs.map((d) => ({ id: d.id, ...d.data() })) as Product[];
-        setProducts(data.length > 0 ? data : initialProducts);
-      },
-      (error) => console.warn("Firestore Products snapshot listener error:", error)
-    );
+    const unsubProducts = onSnapshot(collection(db, 'products'), (snapshot) => {
+      const data = snapshot.docs.map((d) => ({ id: d.id, ...d.data() })) as Product[];
+      setProducts(data.length > 0 ? data : initialProducts);
+    });
 
-    const unsubCoupons = onSnapshot(
-      collection(db, 'coupons'),
-      (snapshot) => {
-        const data = snapshot.docs.map((d) => ({ id: d.id, ...d.data() })) as Coupon[];
-        setCoupons(data.length > 0 ? data : initialCoupons);
-      },
-      (error) => console.warn("Firestore Coupons snapshot listener error:", error)
-    );
+    const unsubCoupons = onSnapshot(collection(db, 'coupons'), (snapshot) => {
+      const data = snapshot.docs.map((d) => ({ id: d.id, ...d.data() })) as Coupon[];
+      setCoupons(data.length > 0 ? data : initialCoupons);
+    });
 
-    const unsubOrders = onSnapshot(
-      collection(db, 'orders'),
-      (snapshot) => {
-        const data = snapshot.docs.map((d) => ({ id: d.id, ...d.data() })) as Order[];
-        setOrders(data.length > 0 ? data : initialOrders);
-      },
-      (error) => console.warn("Firestore Orders snapshot listener error:", error)
-    );
+    const unsubOrders = onSnapshot(collection(db, 'orders'), (snapshot) => {
+      const data = snapshot.docs.map((d) => ({ id: d.id, ...d.data() })) as Order[];
+      setOrders(data.length > 0 ? data : initialOrders);
+    });
 
-    const unsubCustomers = onSnapshot(
-      collection(db, 'customers'),
-      (snapshot) => {
-        const data = snapshot.docs.map((d) => ({ id: d.id, ...d.data() })) as Customer[];
-        setCustomers(data.length > 0 ? data : initialCustomers);
-      },
-      (error) => console.warn("Firestore Customers snapshot listener error:", error)
-    );
+    const unsubCustomers = onSnapshot(collection(db, 'customers'), (snapshot) => {
+      const data = snapshot.docs.map((d) => ({ id: d.id, ...d.data() })) as Customer[];
+      setCustomers(data.length > 0 ? data : initialCustomers);
+    });
 
-    const unsubSettings = onSnapshot(
-      doc(db, 'settings', 'store_config'),
-      (docSnap) => {
-        if (docSnap.exists()) setSettings(docSnap.data() as StoreSettings);
-      },
-      (error) => console.warn("Firestore Settings snapshot listener error:", error)
-    );
+    const unsubNotifications = onSnapshot(collection(db, 'notifications'), (snapshot) => {
+      const data = snapshot.docs.map((d) => ({ id: d.id, ...d.data() })) as StoreNotification[];
+      setNotifications(data.length > 0 ? data : initialNotifications);
+    });
 
-    // Firebase Auth Observer
+    const unsubSettings = onSnapshot(doc(db, 'settings', 'store_config'), (docSnap) => {
+      if (docSnap.exists()) setSettings(docSnap.data() as StoreSettings);
+    });
+
     const unsubAuth = onAuthStateChanged(auth, (user) => {
       if (user) {
         setCurrentUser({
@@ -279,7 +263,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           name: user.displayName || user.email?.split('@')[0] || 'User',
           email: user.email || '',
           phone: '+92 300 1234567',
-          address: 'Main Street, Phase 5 DHA',
+          address: 'Commercial Area, Phase 5 DHA',
           city: 'Lahore',
           role: user.email?.includes('admin') ? 'admin' : 'customer',
           avatar: user.photoURL || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
@@ -295,12 +279,12 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       unsubCoupons();
       unsubOrders();
       unsubCustomers();
+      unsubNotifications();
       unsubSettings();
       unsubAuth();
     };
   }, []);
 
-  // Sync Cart & Wishlist to Local Storage
   useEffect(() => {
     localStorage.setItem('dukandar_cart', JSON.stringify(cart));
   }, [cart]);
@@ -323,7 +307,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const t = (key: any, params?: Record<string, string | number>) => getTranslation(language, key, params);
 
-  // Cart Calculations
+  // Cart Computations
   const cartCount = cart.reduce((acc, item) => acc + item.quantity, 0);
   const cartSubtotal = cart.reduce((acc, item) => acc + (item.product?.price || 0) * item.quantity, 0);
   
@@ -335,13 +319,12 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   }
 
-  const freeThreshold = settings?.freeDeliveryThreshold || 3000;
-  const deliveryFee = settings?.standardDeliveryFee || 200;
+  const freeThreshold = settings?.freeDeliveryThreshold || 4000;
+  const deliveryFee = settings?.standardDeliveryFee || 250;
   const isFreeDelivery = cartSubtotal >= freeThreshold;
   const cartDeliveryFee = cart.length === 0 ? 0 : isFreeDelivery ? 0 : deliveryFee;
   const cartTotal = Math.max(0, cartSubtotal - cartDiscount + cartDeliveryFee);
 
-  // Cart Handlers
   const addToCart = (
     product: Product,
     quantity = 1,
@@ -424,7 +407,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const isInWishlist = (productId: string) => wishlist.includes(productId);
 
-  // Coupon Actions
+  // Realtime Coupons Operations
   const applyCouponCode = (code: string) => {
     const found = coupons.find((c) => c.code.toUpperCase() === code.trim().toUpperCase() && c.isActive);
     if (!found) return { success: false, message: t('invalidCoupon') };
@@ -446,7 +429,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (target) await updateDoc(doc(db, 'coupons', couponId), { isActive: !target.isActive });
   };
 
-  // Orders Actions
+  // Realtime Orders & Stock Operations
   const placeOrder = async (
     orderData: Omit<Order, 'id' | 'orderNumber' | 'createdAt' | 'trackingHistory'>
   ): Promise<Order> => {
@@ -473,10 +456,11 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       ],
     };
 
+    // 1. Create Order Doc
     await setDoc(doc(db, 'orders', id), newOrder);
     setLastPlacedOrder(newOrder);
 
-    // Update Product Stock Levels safely in Firestore
+    // 2. Realtime Stock Reduction
     for (const item of orderData.items) {
       const prod = products.find((p) => p.id === item.product.id);
       if (prod) {
@@ -485,9 +469,33 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             stock: Math.max(0, prod.stock - item.quantity),
           });
         } catch (err) {
-          console.warn(`Failed to update stock for product ${prod.id}:`, err);
+          console.warn(`Failed stock reduction for product ${prod.id}:`, err);
         }
       }
+    }
+
+    // 3. Realtime Customer Record Sync
+    const existingCust = customers.find((c) => c.email.toLowerCase() === orderData.customer.email.toLowerCase());
+    if (existingCust) {
+      await updateDoc(doc(db, 'customers', existingCust.id), {
+        totalOrders: (existingCust.totalOrders || 0) + 1,
+        totalSpent: (existingCust.totalSpent || 0) + orderData.total,
+      });
+    } else {
+      const custId = `cust-${Date.now()}`;
+      const newCust: Customer = {
+        id: custId,
+        name: orderData.customer.name,
+        email: orderData.customer.email,
+        phone: orderData.customer.phone,
+        city: orderData.customer.city,
+        totalOrders: 1,
+        totalSpent: orderData.total,
+        joinedDate: now.toISOString().split('T')[0],
+        avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
+        status: 'active',
+      };
+      await setDoc(doc(db, 'customers', custId), newCust);
     }
 
     clearCart();
@@ -520,7 +528,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const trackOrderByNumber = (orderNumber: string) =>
     orders.find((o) => o.orderNumber.toUpperCase() === orderNumber.trim().toUpperCase()) || null;
 
-  // Products Operations
+  // Realtime Products Operations
   const addProduct = async (productData: Omit<Product, 'id' | 'rating' | 'reviewCount'>) => {
     const id = `prod-${Date.now()}`;
     const newProduct: Product = { ...productData, id, rating: 5.0, reviewCount: 1, reviews: [] };
@@ -574,17 +582,28 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setActiveView('shop');
   };
 
-  // Notifications
+  // Realtime Notifications Operations
   const unreadNotificationCount = notifications.filter((n) => !n.read).length;
-  const markNotificationAsRead = (id: string) =>
-    setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)));
-  const markAllNotificationsAsRead = () =>
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-  const addNotification = (notif: Omit<StoreNotification, 'id' | 'timestamp' | 'read'>) => {
-    setNotifications((prev) => [
-      { ...notif, id: `notif-${Date.now()}`, timestamp: 'Just now', read: false },
-      ...prev,
-    ]);
+  
+  const markNotificationAsRead = async (id: string) => {
+    await updateDoc(doc(db, 'notifications', id), { read: true });
+  };
+
+  const markAllNotificationsAsRead = async () => {
+    for (const n of notifications) {
+      if (!n.read) await updateDoc(doc(db, 'notifications', n.id), { read: true });
+    }
+  };
+
+  const addNotification = async (notif: Omit<StoreNotification, 'id' | 'timestamp' | 'read'>) => {
+    const id = `notif-${Date.now()}`;
+    const newNotif: StoreNotification = {
+      ...notif,
+      id,
+      timestamp: 'Just now',
+      read: false,
+    };
+    await setDoc(doc(db, 'notifications', id), newNotif);
   };
 
   const updateSettings = async (newSettings: Partial<StoreSettings>) => {
