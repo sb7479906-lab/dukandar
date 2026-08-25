@@ -7,6 +7,7 @@ export const AdminCustomers: React.FC = () => {
   const { customers, currency, language, t, settings } = useStore();
   const [searchQuery, setSearchQuery] = useState('');
 
+  // Filtering live Firestore customers
   const filteredCustomers = customers.filter(
     (c) =>
       c.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -51,8 +52,9 @@ export const AdminCustomers: React.FC = () => {
 
       {/* Customer Directory Cards Grid */}
       {filteredCustomers.length === 0 ? (
-        <div className="text-center py-12 bg-white rounded-3xl border border-slate-200 text-slate-500 text-xs font-bold">
-          {language === 'ur' ? 'کوئی کسٹمر نہیں ملا' : 'No customers match your search.'}
+        <div className="text-center py-16 bg-white rounded-3xl border border-slate-200/80 text-slate-500 text-xs font-bold space-y-2">
+          <User className="w-8 h-8 text-slate-300 mx-auto" />
+          <p>{language === 'ur' ? 'کوئی کسٹمر نہیں ملا' : 'No real customers registered yet.'}</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
