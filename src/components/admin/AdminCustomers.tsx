@@ -24,7 +24,9 @@ export const AdminCustomers: React.FC = () => {
             {t('adminCustomers')} ({customers.length})
           </h2>
           <p className="text-xs sm:text-sm text-slate-500">
-            {language === 'ur' ? 'رجسٹرڈ گاہکوں کے آرڈرز، خرچ اور رابطے کی تفصیلات' : 'Customer buyer profiles, total lifetime spending, and contact directory'}
+            {language === 'ur'
+              ? 'رجسٹرڈ گاہکوں کے آرڈرز، خرچ اور رابطے کی تفصیلات'
+              : 'Customer buyer profiles, total lifetime spending, and contact directory'}
           </p>
         </div>
       </div>
@@ -35,7 +37,11 @@ export const AdminCustomers: React.FC = () => {
           <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
           <input
             type="text"
-            placeholder={language === 'ur' ? 'کسٹمر کا نام، ای میل یا شہر تلاش کریں...' : 'Search customers by name, phone, city...'}
+            placeholder={
+              language === 'ur'
+                ? 'کسٹمر کا نام، ای میل یا شہر تلاش کریں...'
+                : 'Search customers by name, phone, city...'
+            }
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm outline-none focus:bg-white focus:border-emerald-500"
