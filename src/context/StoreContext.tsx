@@ -34,7 +34,12 @@ import {
 } from '../types';
 import { getTranslation } from '../utils/translations';
 
-// Initial Categories Template (Real Store Structure)
+// Authorized Permanent Admin Email List
+const AUTHORIZED_ADMIN_EMAILS = [
+  'rehanbutt506@gmail.com',
+  'sb7479906@gmail.com'
+];
+
 const realCategories: Category[] = [
   { id: 'electronics', name: 'Electronics', nameUrdu: 'الیکٹرانکس', icon: 'Cpu', image: '', itemCount: 0 },
   { id: 'fashion', name: 'Fashion & Apparel', nameUrdu: 'فیشن و ملبوسات', icon: 'Shirt', image: '', itemCount: 0 },
@@ -43,7 +48,6 @@ const realCategories: Category[] = [
   { id: 'home', name: 'Home & Kitchen', nameUrdu: 'گھریلو سامان', icon: 'Home', image: '', itemCount: 0 },
 ];
 
-// Production Default Store Settings
 const productionSettings: StoreSettings = {
   storeName: 'Dukandar',
   storeNameUrdu: 'دکان دار',
@@ -175,7 +179,6 @@ const StoreContext = createContext<StoreContextType | undefined>(undefined);
 export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
-  // Language & App Mode
   const [language, setLanguageState] = useState<Language>(
     () => (localStorage.getItem('dukandar_lang') as Language) || 'en'
   );
@@ -185,7 +188,6 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [activeView, setActiveView] = useState<'shop' | 'admin'>('shop');
   const [adminTab, setAdminTab] = useState<AdminTab>('dashboard');
 
-  // Realtime Collections (100% Real Database Data)
   const [categories] = useState<Category[]>(realCategories);
   const [products, setProducts] = useState<Product[]>([]);
   const [coupons, setCoupons] = useState<Coupon[]>([]);
@@ -194,13 +196,11 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [notifications, setNotifications] = useState<StoreNotification[]>([]);
   const [settings, setSettings] = useState<StoreSettings>(productionSettings);
 
-  // Filters & State
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [sortBy, setSortBy] = useState<string>('featured');
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000000]);
 
-  // Cart & Wishlist
   const [cart, setCart] = useState<CartItem[]>(() => {
     const saved = localStorage.getItem('dukandar_cart');
     return saved ? JSON.parse(saved) : [];
@@ -211,12 +211,10 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   });
   const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
 
-  // Auth & Tracking State
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
   const [currentTrackingOrder, setCurrentTrackingOrder] = useState<Order | null>(null);
   const [lastPlacedOrder, setLastPlacedOrder] = useState<Order | null>(null);
 
-  // Modals & Drawers
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isWishlistOpen, setIsWishlistOpen] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
@@ -227,7 +225,6 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [activeProductModal, setActiveProductModal] = useState<Product | null>(null);
 
-  // Initial Settings Sync
   const initSettings = async () => {
     try {
       const docSnap = await getDocs(collection(db, 'settings'));
@@ -239,7 +236,6 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
-  // Realtime Subscriptions
   useEffect(() => {
     initSettings();
 
@@ -272,16 +268,18 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       if (docSnap.exists()) setSettings(docSnap.data() as StoreSettings);
     });
 
+    // Realtime Strict Admin Auth Check
     const unsubAuth = onAuthStateChanged(auth, (user) => {
-      if (user) {
+      if (user && user.email) {
+        const isAdmin = AUTHORIZED_ADMIN_EMAILS.includes(user.email.toLowerCase());
         setCurrentUser({
           id: user.uid,
-          name: user.displayName || user.email?.split('@')[0] || 'User',
-          email: user.email || '',
+          name: user.displayName || user.email.split('@')[0],
+          email: user.email,
           phone: '',
           address: '',
           city: '',
-          role: user.email?.includes('admin') ? 'admin' : 'customer',
+          role: isAdmin ? 'admin' : 'customer',
           avatar: user.photoURL || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
         });
       } else {
@@ -323,7 +321,6 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const t = (key: any, params?: Record<string, string | number>) => getTranslation(language, key, params);
 
-  // Cart Computations
   const cartCount = cart.reduce((acc, item) => acc + item.quantity, 0);
   const cartSubtotal = cart.reduce((acc, item) => acc + (item.product?.price || 0) * item.quantity, 0);
   
@@ -423,7 +420,6 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const isInWishlist = (productId: string) => wishlist.includes(productId);
 
-  // Realtime Coupons Operations
   const applyCouponCode = (code: string) => {
     const found = coupons.find((c) => c.code.toUpperCase() === code.trim().toUpperCase() && c.isActive);
     if (!found) return { success: false, message: t('invalidCoupon') };
@@ -445,7 +441,6 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (target) await updateDoc(doc(db, 'coupons', couponId), { isActive: !target.isActive });
   };
 
-  // Realtime Orders & Stock Operations
   const placeOrder = async (
     orderData: Omit<Order, 'id' | 'orderNumber' | 'createdAt' | 'trackingHistory'>
   ): Promise<Order> => {
@@ -472,11 +467,9 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       ],
     };
 
-    // 1. Create Order Doc
     await setDoc(doc(db, 'orders', id), newOrder);
     setLastPlacedOrder(newOrder);
 
-    // 2. Realtime Stock Reduction
     for (const item of orderData.items) {
       const prod = products.find((p) => p.id === item.product.id);
       if (prod) {
@@ -490,7 +483,6 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       }
     }
 
-    // 3. Realtime Customer Record Sync
     const existingCust = customers.find((c) => c.email.toLowerCase() === orderData.customer.email.toLowerCase());
     if (existingCust) {
       await updateDoc(doc(db, 'customers', existingCust.id), {
@@ -544,7 +536,6 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const trackOrderByNumber = (orderNumber: string) =>
     orders.find((o) => o.orderNumber.toUpperCase() === orderNumber.trim().toUpperCase()) || null;
 
-  // Realtime Products Operations
   const addProduct = async (productData: Omit<Product, 'id' | 'rating' | 'reviewCount'>) => {
     const id = `prod-${Date.now()}`;
     const newProduct: Product = { ...productData, id, rating: 5.0, reviewCount: 0, reviews: [] };
@@ -582,14 +573,19 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     });
   };
 
-  // Auth Operations
+  // Secure Strict Login Handler
   const loginUser = async (email: string, pass = '123456', role: 'customer' | 'admin' = 'customer') => {
+    const cleanEmail = email.trim().toLowerCase();
     try {
-      await signInWithEmailAndPassword(auth, email, pass);
-      if (role === 'admin') setActiveView('admin');
+      await signInWithEmailAndPassword(auth, cleanEmail, pass);
     } catch {
-      await createUserWithEmailAndPassword(auth, email, pass);
-      if (role === 'admin') setActiveView('admin');
+      await createUserWithEmailAndPassword(auth, cleanEmail, pass);
+    }
+
+    if (AUTHORIZED_ADMIN_EMAILS.includes(cleanEmail) || role === 'admin') {
+      if (AUTHORIZED_ADMIN_EMAILS.includes(cleanEmail)) {
+        setActiveView('admin');
+      }
     }
   };
 
@@ -598,7 +594,6 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setActiveView('shop');
   };
 
-  // Realtime Notifications Operations
   const unreadNotificationCount = notifications.filter((n) => !n.read).length;
   
   const markNotificationAsRead = async (id: string) => {
