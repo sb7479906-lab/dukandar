@@ -106,7 +106,7 @@ export const AdminAnalytics: React.FC = () => {
         groupedSales[key] = { sales: 0, orders: 0 };
       }
 
-      groupedSales[key].sales += o.totalAmount || 0;
+      groupedSales[key].sales += o.total || 0;
       groupedSales[key].orders += 1;
     });
 
