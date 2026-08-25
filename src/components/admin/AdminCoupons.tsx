@@ -4,14 +4,14 @@ import { useStore } from '../../context/StoreContext';
 import { formatPrice } from '../../utils/formatters';
 
 export const AdminCoupons: React.FC = () => {
-  const { coupons, addCoupon, deleteCoupon, currency, language, t, settings } = useStore();
+  const { coupons, createCoupon, toggleCouponActive, currency, language, t, settings } = useStore();
 
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [code, setCode] = useState('');
   const [discountPercent, setDiscountPercent] = useState<number>(15);
   const [minSpend, setMinSpend] = useState<number>(2000);
   
-  // Set dynamic default expiry date (1 month ahead from current time)
+  // Dynamic default expiry date (30 days ahead from current time)
   const defaultExpiry = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
   const [expiryDate, setExpiryDate] = useState(defaultExpiry);
 
@@ -19,13 +19,12 @@ export const AdminCoupons: React.FC = () => {
     e.preventDefault();
     if (!code.trim()) return;
 
-    await addCoupon({
+    await createCoupon({
       code: code.trim().toUpperCase(),
       discountPercent: Number(discountPercent),
       minSpend: Number(minSpend),
       expiryDate,
-      active: true,
-      usageCount: 0,
+      isActive: true,
     });
 
     setIsAddOpen(false);
@@ -75,9 +74,13 @@ export const AdminCoupons: React.FC = () => {
               </div>
 
               <button
-                onClick={() => deleteCoupon(c.id)}
-                className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer"
-                title="Delete Coupon"
+                onClick={() => toggleCouponActive(c.id)}
+                className={`p-1.5 rounded-xl transition-colors cursor-pointer ${
+                  c.isActive
+                    ? 'text-slate-400 hover:text-rose-600 hover:bg-rose-50'
+                    : 'text-emerald-600 hover:bg-emerald-50'
+                }`}
+                title={c.isActive ? "Deactivate Coupon" : "Activate Coupon"}
               >
                 <Trash2 className="w-4 h-4" />
               </button>
@@ -100,13 +103,13 @@ export const AdminCoupons: React.FC = () => {
               </div>
               <div className="flex justify-between">
                 <span>Times Redeemed:</span>
-                <span className="font-bold text-slate-900">{c.usageCount || 0} times</span>
+                <span className="font-bold text-slate-900">{c.timesUsed || 0} times</span>
               </div>
             </div>
 
             <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-700">
-              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-              <span>Active Promotion</span>
+              <CheckCircle2 className={`w-4 h-4 ${c.isActive ? 'text-emerald-600' : 'text-slate-300'}`} />
+              <span>{c.isActive ? 'Active Promotion' : 'Disabled'}</span>
             </div>
           </div>
         ))}
